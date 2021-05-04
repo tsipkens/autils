@@ -1,23 +1,26 @@
 
-% MP2ZP     Calculate electric mobility from a vector of particle mass.
-% Author:   Timothy Sipkens, 2019-01-02
+% MP2ZP  Calculate electric mobility from a vector of particle mass.
+%  
+%  B = mp2zp(M,Z,[],[],PROP) computes the mechanical mobility for the given particle
+%  mass, M, and integer charge state, Z. Requires the PROP structure to 
+%  have PROP.m0 and PROP.Dm fields, which specify the mass-mobility
+%  relation.
+%  
+%  B = mp2zp(M,Z,T,P,PROP) adds inputs explicitly stating the temperature
+%  in Kelvin, T, and pressure in atm., P.
+%  
+%  [B,ZP] = mp2zp(...) add the electromobility, ZP, as an output. 
+%  
+%  [B,ZP,D] = mp2zp(...) add the mobility diameter implied by  the
+%  mass-mobility relation.
 % 
-% Inputs:
-%   m           Particle mass
-%   z           Integer charge state
-%   T           System temperature
-%   P           System pressure
-%   prop        CPMA/DMA properties structure
-%
-% Outputs:
-%   B           Mechanical mobility
-%   Zp          Electromobility
-%   d           Mobility diameter (implied by mass-mobility relation)
-% 
-% Note:
+%  ------------------------------------------------------------------------
+%  
+%  NOTE:
 %   Uses mass-mobility relationship to first convert to a mobility
 %   diameter and then estimates the mobility using dm2zp.
-%=========================================================================%
+%  
+%  AUTHOR: Timothy Sipkens, 2019-01-02
 
 function [B, Zp, d] = mp2zp(m, z, T, P, prop)
 

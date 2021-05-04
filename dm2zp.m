@@ -1,24 +1,24 @@
 
-% DM2ZP     Calculate electric mobility from a vector of mobility diameter.
-% Author:   Timothy Sipkens, 2019-01-02
+% DM2ZP  Calculate electric mobility from a vector of mobility diameter.
 % 
-% Inputs:
-%   d           Particle mobility diameter
-%   z           Integer charge state
-%   T           System temperature  (Optional, see note 1 below)
-%   P           System pressure     (Optional, see note 1 below)
-%
-% Outputs:
-%   Zp          Electromobility
-%   B           Mechanical mobility
-%
-% Notes:
-% 1 Temperature (T) and pressure (p) must both be specified before 
-%   they are used. Otherwise, they are ignored and the code from Buckley
-%   et al. (2017) is used.
-% 2 Some of the code is adapted from Buckley et al. (2017) and Olfert 
-%   laboratory.
-%=========================================================================%
+%  B = mp2zp(M,Z) computes the mechanical mobility for the given particle
+%  mobility diameter, D, and integer charge state, Z. 
+%  
+%  B = mp2zp(M,Z,T,P) adds inputs explicitly stating the temperature
+%  in Kelvin, T, and pressure in atm., P.
+%  
+%  [B,ZP] = mp2zp(...) add the electromobility, ZP, as an output. 
+%  
+%  ------------------------------------------------------------------------
+%  
+%  NOTES:
+%   1 Temperature (T) and pressure (p) must both be specified before 
+%     they are used. Otherwise, they are ignored and the code from Buckley
+%     et al. (2017) is used.
+%   2 Some of the code is adapted from Buckley et al. (2017) and Olfert 
+%     laboratory.
+%  
+%  AUTHOR: Timothy Sipkens, 2019-01-02
 
 function [B,Zp] = dm2zp(d,z,T,p)
 
@@ -56,53 +56,3 @@ Zp = B .* e .* z; % electromobility
 end
 
 
-%== CC.m =================================================================%
-%   Function to evaluate Cunningham slip correction factor.
-%   Author:  Timothy Sipkens, 2019-01-02
-function Cc = Cc(d,T,p)
-%-------------------------------------------------------------------------%
-% Inputs:
-%   d           Particle mobility diameter
-%   T           System temperature  
-%                   (Optional, s)
-%   P           System pressure     (Optional, same as above)
-%
-% Outputs:
-%   Zp          Electromobility
-%   B           Mechanical mobility
-% 
-% Note:
-% 1 As with above, the temperature (T) and pressure (p) must both be 
-%   specified before they are used. Otherwise, they are ignored and the 
-%   code from Buckley et al. (2017) is used.
-%-------------------------------------------------------------------------%
-
-if nargin==1 % if P and T are not specified, use Buckley/Davies
-    mfp = 66.5e-9; % mean free path
-    
-    % for air, from Davies (1945)
-    A1 = 1.257;
-    A2 = 0.4;
-    A3 = 0.55;
-    
-else % from Olfert laboratory / Kim et al.
-    S = 110.4; % temperature [K]
-    mfp_0 = 6.730e-8; % mean free path of gas molecules in air [m]
-    T_0 = 296.15; % reference temperature [K]
-    p_0 = 101325; % reference pressure, [Pa] (760 mmHg to Pa)
-    
-    p = p*p_0;
-    
-    mfp = mfp_0*(T/T_0)^2*(p_0/p)*((T_0+S)/(T+S)); % mean free path
-        % Kim et al. (2005) (doi:10.6028/jres.110.005), ISO 15900 Eqn 4
-    
-    A1 = 1.165;
-    A2 = 0.483;
-    A3 = 0.997/2;
-    
-end
-
-Kn = (2*mfp)./d; % Knudsen number
-Cc = 1 + Kn.*(A1 + A2.*exp(-(2*A3)./Kn)); % Cunningham slip correction factor
-
-end
