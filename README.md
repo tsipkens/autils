@@ -1,2 +1,3 @@
-# aerotools
-A set of tools for computing and comparing aerosol properties.
+# AERO-UTILS
+
+A set of utilities for computing and comparing aerosol properties.
