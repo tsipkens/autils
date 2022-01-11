@@ -39,11 +39,12 @@ end
 %-------------------------------------------------------------------------%
 
 
+% Use the mass-mobility relationship to get mobility diameter.
 d = 1e-9 .* (m ./ prop.m0) .^ (1 / prop.Dm);
-    % use mass-mobility relationship to get mobility diameter
 
     
-%-- Use mobility diameter to get particle electro and mechanical mobl. ---%
+% Use mobility diameter to get particle 
+% electrical and mechanical mobilities. 
 if or(isempty(T),isempty(P))
     [B, Zp] = dm2zp(d, z);
 else

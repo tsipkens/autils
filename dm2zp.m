@@ -1,10 +1,10 @@
 
 % DM2ZP  Calculate electric mobility from a vector of mobility diameter.
 % 
-%  B = mp2zp(M,Z) computes the mechanical mobility for the given particle
+%  B = dm2zp(M,Z) computes the mechanical mobility for the given particle
 %  mobility diameter, D, and integer charge state, Z. 
 %  
-%  B = mp2zp(M,Z,T,P) adds inputs explicitly stating the temperature
+%  B = dm2zp(M,Z,T,P) adds inputs explicitly stating the temperature
 %  in Kelvin, T, and pressure in atm., P.
 %  
 %  [B,ZP] = mp2zp(...) add the electromobility, ZP, as an output. 
@@ -20,7 +20,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2019-01-02
 
-function [B,Zp] = dm2zp(d,z,T,p)
+function [B,Zp] = dm2zp(d, z, T, p)
 
 
 %-- Parse inputs ---------------------------------------------------------%

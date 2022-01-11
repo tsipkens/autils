@@ -45,6 +45,6 @@ else % Kim et al. (adapted from Olfert laboratory)
 end
 
 Kn = (2 * mfp) ./ d; % Knudsen number
-Cc = 1 + Kn .* (A1 + A2.*exp(-(2*A3)./Kn)); % Cunningham slip correction factor
+Cc = 1 + Kn .* (A1 + A2 .* exp(-(2 * A3) ./ Kn)); % Cunningham slip correction factor
 
 end
