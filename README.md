@@ -2,7 +2,7 @@
 
 (***A***erosol ***Util***itie***s***)
 
-A set of utilities for computing and comparing aerosol properties.
+A set of utilities for computing and comparing aerosol properties. This code is still under construction and could change at any time. 
 
 ### General notes
 
