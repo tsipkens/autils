@@ -7,13 +7,13 @@ clc;
 
 
 dg = 75;
-sg = 1.65;
+sg = 1.86; %65;
 
 chi = 1.0;
 
 
 n = 2e3;
-d = logspace(log10(10), log10(1e3), n);
+d = logspace(log10(10), log10(2e3), n);
 
 
 
@@ -59,7 +59,7 @@ set(gca, 'XScale', 'log');
 
 
 figure(2);
-d2 = [10:10:100, 200:100:1000];
+d2 = [10:10:100, 200:100:1000, 2000:1000:4000];
 da2 = dm2da(d2 .* 1e-9, 2130, chi, 0) .* 1e9;
 loglog(d2, da2, '.');
 xlim([min(d2), max(d2)]);
