@@ -4,7 +4,7 @@ T = 298;
 P = 1;
 
 % prop = prop_massmob('Dm', 3, 'rho100', 900);
-prop = mm.gen('Dm', 2.48, 'rho100', 510);  % universal relation
+prop = massmob.gen('Dm', 2.48, 'rho100', 510);  % universal relation
 
 
 [B, Zp, d] = mp2zp(1e-18, 1, T, P, prop)

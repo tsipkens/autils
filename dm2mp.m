@@ -12,7 +12,7 @@
 function m = dm2mp(d, prop)
 
 % Make sure 'm0' is a field of prop.
-if ~isfield(prop, 'm0'); prop = mm.gen(prop); end
+if ~isfield(prop, 'm0'); prop = massmob.gen(prop); end
 
 % Use the mass-mobility relationship to get mobility diameter.
 m = prop.m0 .* (d .* 1e9) .^ prop.zet;

@@ -17,13 +17,15 @@
 function prop = gen(prop_str1, val1, str2, val2)
 
 % Check for presents.
-switch prop_str1
-    case {'NaCl', 'salt'}  % assume spheres with bulk density
-        prop_str1 = 'zet';  val1 = 3;
-        str2 = 'rho100';    val2 = 2160;
-    case {'universal', 'soot'}  % universal soot relation (Olfert and Rogak)
-        prop_str1 = 'zet';  val1 = 2.48;
-        str2 = 'rho100';    val2 = 510;
+if ischar(prop_str1)
+    switch prop_str1
+        case {'NaCl', 'salt'}  % assume spheres with bulk density
+            prop_str1 = 'zet';  val1 = 3;
+            str2 = 'rho100';    val2 = 2160;
+        case {'universal', 'soot'}  % universal soot relation (Olfert and Rogak)
+            prop_str1 = 'zet';  val1 = 2.48;
+            str2 = 'rho100';    val2 = 510;
+    end
 end
 
 % Copy inputs to structure. 

@@ -21,7 +21,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2019-01-02
 
-function [B,Zp] = dm2zp(dm, z, T, p)
+function [B, Zp] = dm2zp(dm, z, T, p)
 
 %-- Parse inputs ---------------------------------------------------------%
 if ~exist('z','var'); z = []; end
@@ -45,7 +45,6 @@ else % If P and T are Olfert laboratory / Kim et al.
     
 end
 %-------------------------------------------------------------------------%
-
 
 Zp = B .* e .* z; % electromobility
 

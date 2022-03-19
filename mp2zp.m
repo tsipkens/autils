@@ -30,7 +30,7 @@ if ~exist('T', 'var'); T = []; end
 if ~exist('P', 'var'); P = []; end
 
 % Make sure 'm0' is a field of prop.
-if ~isfield(prop, 'm0'); prop = mm.gen(prop); end
+if ~isfield(prop, 'm0'); prop = massmob.gen(prop); end
 %-------------------------------------------------------------------------%
 
 
