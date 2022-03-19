@@ -3,6 +3,7 @@
 %  
 %  M = dm2mp(D,PROP) computes the particle mass from the mass-mobility
 %  relation parameters in PROP (specifically PROP.Dm and prop.m0). 
+%  Expects DM is to be given in m, and the output will be given in kg.
 % 
 %  ------------------------------------------------------------------------
 %  
@@ -11,10 +12,10 @@
 function m = dm2mp(d, prop)
 
 % Make sure 'm0' is a field of prop.
-if ~isfield(prop, 'm0'); prop = prop_massmob(prop); end
+if ~isfield(prop, 'm0'); prop = mm.gen(prop); end
 
 % Use the mass-mobility relationship to get mobility diameter.
-m = prop.m0 .* (d .* 1e9) .^ prop.Dm;
+m = prop.m0 .* (d .* 1e9) .^ prop.zet;
 
 end
 

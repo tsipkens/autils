@@ -8,6 +8,7 @@ clc;
 
 dg = 75;
 sg = 1.86; %65;
+% sg = 1.8;
 
 chi = 1.0;
 
@@ -29,6 +30,11 @@ smd = hc(dg, sg, 6)
 da = dm2da(d .* 1e-9, 2130, chi, 0) .* 1e9;
 
 
+sga = exp( ...
+    (log(dm2da(exp(log(dg) .* 1.05) .* 1e-9, 2130, chi, 0)) - ...
+     log(dm2da(exp(log(dg) .* 0.95) .* 1e-9, 2130, chi, 0))) ./ ...
+    (0.1 .* log(dg)) .* ...
+    log(sg));  % aerodynamic diameter, count distribution GSD
 
 mmad = mmad .* 1e9
 mmvd = mmvd .* 1e9
@@ -65,5 +71,13 @@ loglog(d2, da2, '.');
 xlim([min(d2), max(d2)]);
 ylim([min(da2), max(da2)]);
 
+
+
+figure(3);
+plot(da, x);
+hold on;
+plot(da, normpdf(log(da), log(cmad), log(sga)) .* (sqrt(2*pi) * log(sga)));
+hold off;
+set(gca, 'XScale', 'log');
 
 

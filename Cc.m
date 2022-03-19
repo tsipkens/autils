@@ -2,10 +2,10 @@
 % CC  Function to evaluate Cunningham slip correction factor.
 %  
 %  CC = Cc(D) computes the Cunningham slip correction factor for
-%  the provided mobility diameter, D. 
+%  the provided mobility diameter, D, in nm. 
 %  
-%  CC = Cc(D,T,P) add inputs for the temperature in Kelvin, T, 
-%  and pressure in atm., P. 
+%  CC = Cc(D,T,P) add inputs for the temperature, T, in Kelvin
+%  and pressure, P, in atm.. 
 %  
 %  ------------------------------------------------------------------------
 % 
@@ -26,7 +26,7 @@ if nargin==1 % if P and T are not specified, use Buckley/Davies
     A2 = 0.4;
     A3 = 0.55;
     
-else % Kim et al. (adapted from Olfert laboratory)
+else  % Kim et al. (adapted from Olfert laboratory)
     S = 110.4;       % temperature [K]
     mfp_0 = 67.3e-9; % mean free path of gas molecules in air [m]
     T_0 = 296.15;    % reference temperature [K]

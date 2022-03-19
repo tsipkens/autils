@@ -1,10 +1,11 @@
 
 % DM2ZP  Calculate electric mobility from a vector of mobility diameter.
 % 
-%  B = dm2zp(M,Z) computes the mechanical mobility for the given particle
+%  B = dm2zp(DM,Z) computes the mechanical mobility for the given particle
 %  mobility diameter, D, and integer charge state, Z. 
+%  DM is to be given in m. 
 %  
-%  B = dm2zp(M,Z,T,P) adds inputs explicitly stating the temperature
+%  B = dm2zp(DM,Z,T,P) adds inputs explicitly stating the temperature
 %  in Kelvin, T, and pressure in atm., P.
 %  
 %  [B,ZP] = mp2zp(...) add the electromobility, ZP, as an output. 
@@ -20,23 +21,18 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2019-01-02
 
-function [B,Zp] = dm2zp(d, z, T, p)
-
+function [B,Zp] = dm2zp(dm, z, T, p)
 
 %-- Parse inputs ---------------------------------------------------------%
-if ~exist('z','var') % if integer charge state not specified use z = 1
-    z = 1;
-elseif isempty(z)
-    z = 1;
-end
-
+if ~exist('z','var'); z = []; end
+if isempty(z); z = 1; end  % if integer charge state not specified use z = 1
 
 %-- Perform calculation --------------------------------------------------%
 e = 1.6022e-19; % define electron charge [C]
 
-if nargin<=3 % if P and T are not specified, use Buckley/Davies
-    mu = 1.82e-5; % gas viscosity [Pa*s]
-    B = Cc(d)./(3*pi*mu.*d); % mechanical mobility
+if nargin <= 3  % if P and T are not specified, use Buckley/Davies
+    mu = 1.82e-5;  % gas viscosity [Pa*s]
+    B = Cc(dm) ./ (3 * pi * mu .* dm); % mechanical mobility
     
 else % If P and T are Olfert laboratory / Kim et al.
     S = 110.4; % temperature [K]
@@ -45,7 +41,7 @@ else % If P and T are Olfert laboratory / Kim et al.
     mu = vis_23 * ((T / T_0) ^ 1.5) * ((T_0 + S)/(T + S)); % gas viscosity
         % Kim et al. (2005), ISO 15900, Eqn 3
     
-    B = Cc(d,T,p) ./ (3*pi*mu.*d); % mechanical mobility
+    B = Cc(dm, T, p) ./ (3 * pi * mu .* dm); % mechanical mobility
     
 end
 %-------------------------------------------------------------------------%

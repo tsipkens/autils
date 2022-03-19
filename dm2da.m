@@ -3,6 +3,7 @@
 %  
 %  DA = dm2da(DM,RHO) converts the mobility diameter, DM, to an 
 %  aerodynamic diameter, DA, using the particle density, RHO. 
+%  Expects diameters to be in m.
 %  
 %  DA = dm2da(DM,RHO,CHI) incorporates the dynamic shape factor, 
 %  CHI. Default is CHI = 1. 
