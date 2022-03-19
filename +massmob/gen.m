@@ -10,6 +10,10 @@
 %   'rho100' - effective density of a 100 nm particle
 %   'zet' or 'Dm' - mass-mobility expeonent (required)
 %  
+%  NOTE: Can work in conjunction with other prop structures. Call 
+%  `massmob.update(...)` to add mass-mobility parameters to an existing 
+%  prop structure. 
+%  
 %  ------------------------------------------------------------------------
 %  
 %  AUTHOR: Timothy Sipkens, 2021-03-25

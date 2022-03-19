@@ -1,5 +1,9 @@
 
-% UPDATE  A simple utility to update the mass-mobility parameters
+% UPDATE  Add/update the mass-mobility parameters in an existing prop structure. 
+%  
+%  For example, this utility can add the mass-mobility information to a
+%  structure containing flow rates, temperature, presssure, and other
+%  parameters for evaluating the tranfer functions of classifiers. 
 %  
 %  AUTHOR: Timothy Sipkens, 2021-10-06
 
