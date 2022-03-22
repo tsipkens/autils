@@ -74,5 +74,6 @@ end
 prop.rho0 = prop.m0 * 6 / pi * 1e27;
 prop.m100 = prop.m0 / (1 / 100) ^ prop.zet;
 prop.rho100 = prop.m100 * 6 / pi / (100e-9 ^ 3);
+prop.k = prop.m0;  % copy to k (alternative notation)
 
 end
