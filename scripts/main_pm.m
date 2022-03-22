@@ -18,11 +18,14 @@ prop = massmob.gen('universal');
 
 x0 = 1e6 .* normpdf(log(d), log(dg), log(sg)) .* (log(d(2)) - log(d(1)));
 
-rng(0);
-[xs, ~, Gx] = uq.add_noise(x0, 0.005, 1, 0.0001 .* max(x0), 4);
-x = mean(x0, 2);
-sx = sqrt(diag(Gx));
+% rng(0);
+ns = 4;
+[xs, ~, Gx] = uq.add_noise(x0, 0.005, 1, 0.0001 .* max(x0), ns, randi(1e6));
+x = mean(xs, 2);
+sx = sqrt(diag(Gx) ./ ns);
 % sx = [sx; 0.0 .* prop.rho100; 0.0];
+
+M0 = sum(x) * hc(dg / 100, sg, prop.zet, pi / 6 * prop.rho100 * (100^3) * 1e-27) * 1e12
 
 figure(1);
 plot(d, xs, '.');
@@ -32,11 +35,11 @@ hold off;
 set(gca, 'XScale', 'log');
 
 
-[M, Gm] = pm.pm_ni(x, d .* 1e-9, prop, sx);
-pe = [sqrt(Gm) / M, M .* 1e12]  % 1e12 is mg
+[M, sm] = pm.pm_ni(x, d .* 1e-9, prop, sx);
+pe = [sm / M, M .* 1e12, M .* 1e12 - M0]  % 1e12 is mg
 
-[M, Gm] = pm.pm_hc(x, d .* 1e-9, prop, sx);
-pe = [sqrt(Gm) / M, M .* 1e12]
+[M, sm] = pm.pm_hc(x, d .* 1e-9, prop, sx);
+pe = [sm / M, M .* 1e12, M .* 1e12 - M0]
 
 
 

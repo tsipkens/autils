@@ -1,6 +1,6 @@
 
 
-function [M, G] = pm_hc(Ni, di, prop, G)
+function [M, s, G] = pm_hc(Ni, di, prop, G)
 
 if ~exist('prop', 'var'); prop = []; end
 if isempty(prop)  % if not given, assume water density and spheres
@@ -17,22 +17,25 @@ H = hc(dg / 100, sg, prop.zet, k);
 M = H * nansum(Ni);  % output mass
 
 %-- UNCERTAINTIES --------------------------------------------------------%
-% Detect if individual standard deviations are supplied. 
-% If so, convert to covariance matrix. 
-if any(size(G) == 1)
-    G = diag(G .^ 2);
+if exist('G', 'var')
+    % Detect if individual standard deviations are supplied. 
+    % If so, convert to covariance matrix. 
+    if any(size(G) == 1)
+        G = diag(G .^ 2);
+    end
+    
+    % Compute Jacobian. 
+    Di = 1 + prop.zet .* (log(di) - log(dg)) + ...
+        prop.zet ^ 2 .* ((log(di) - log(dg)) .^ 2 + log(sg) .^ 2);
+    J = H .* Di;  % Jacobian
+    if size(G, 1) == (length(di) + 2)  % then mass-mobility uncertainties are incl.
+        J = [J; M ./ prop.rho100; k .* ...
+            M * (prop.zet * log(sg) ^ 2 + log(dg))];
+    end
+    
+    G = J' * G * J;  % LPU
+    s = sqrt(diag(G));  % compute standard errors from covariance
 end
-
-% Compute Jacobian. 
-Di = 1 + prop.zet .* (log(di) - log(dg)) + ...
-    prop.zet ^ 2 .* ((log(di) - log(dg)) .^ 2 + log(sg) .^ 2);
-J = H .* Di;  % Jacobian
-if size(G, 1) == (length(di) + 2)  % then mass-mobility uncertainties are incl.
-    J = [J; M ./ prop.rho100; k .* ...
-        M * (prop.zet * log(sg) ^ 2 + log(dg))];
-end
-
-G = J' * G * J;  % LPU
 %-------------------------------------------------------------------------%
 
 end
