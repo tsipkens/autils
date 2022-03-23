@@ -18,8 +18,8 @@ prop = massmob.gen('salt');
 
 % PFE parameters. 
 npfe0 = 0.8;
-dmpps = 200;
-spfe = 3;
+dmpps = 120;
+spfe = 3.5;
 
 x_up0 = 1e6 .* normpdf(log(d), log(dg), log(sg)) .* (log(d(2)) - log(d(1)));
 
@@ -32,7 +32,7 @@ mpfe0 = pfe.mpfe_hc(x_up0, x_down0, d, prop)  % noiseless MPFE
 
 % Generate noisy signals.
 % rng(0);
-ns = 4;
+ns = 10;
 [xs, ~, Gx] = uq.add_noise([x_up0; x_down0], 0.005, 1, 0.0001 .* max(x_up0), ns, randi(1e6));
 xs_up = xs(1:length(x_up0), :);
 x_up = mean(xs_up, 2); % x_up0; % mean(xs_up, 2);
@@ -62,16 +62,30 @@ pe = [s_mpfe_hc / mpfe_hc, mpfe_hc, mpfe_hc - mpfe0]
 
 
 % Size-resolved filtration efficiencies.
+% For averaged scans. 
+[~, s_spfe0] = pfe.spfe(x_up0, x_down0, Gx ./ ns, []);  % noiseless uncertainties
 [spfe, s_spfe] = pfe.spfe(x_up, x_down, Gx ./ ns, []);
 
+% For individual scans.
+[~, s_spfes0] = pfe.spfe(x_up0, x_down0, Gx, []);  % noiseless uncertainties
+spfes = [];
+for ii=1:size(xs_up, 2)
+    spfes(:,ii) = pfe.spfe(xs_up(:,ii), xs_down(:,ii), Gx ./ ns, []);
+end
+
+
 figure(2);
-plot(d, 1 - Pi);
+
+addpath cmap;
+cmap_sweep(size(xs_up, 2), internet);
+
+scatter(d, spfes, 10, 'o', 'filled', 'MarkerFaceAlpha', 0.7);
 hold on;
-plot(d, spfe, '.');
-plot(d, 1 - Pi + 2 .* s_spfe, 'k');
-plot(d, 1 - Pi - 2 .* s_spfe, 'k');
+plot(d, 1 - Pi, 'k');
+plot(d, 1 - Pi + 2 .* s_spfes0, 'k');
+plot(d, 1 - Pi - 2 .* s_spfes0, 'k');
 hold off;
 set(gca, 'XScale', 'log');
-ylim([0, 1.4]);
+ylim([0.5, 1.2]);
 
 
