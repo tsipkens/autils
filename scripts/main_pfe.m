@@ -88,7 +88,7 @@ figure(2);
 cmap_sweep(size(xs_up, 2), internet);
 scatter(d, spfes, 8, 'o', 'filled', 'MarkerFaceAlpha', 1);
 hold on;
-scatter(d, spfe, 14, [0,0,0], 'o');
+scatter(d, spfe, 75, [0,0,0], 'o');
 plot(d, 1 - Pi, 'k');
 plot(d, 1 - Pi + 2 .* s_spfes0, 'k');
 plot(d, 1 - Pi - 2 .* s_spfes0, 'k');
