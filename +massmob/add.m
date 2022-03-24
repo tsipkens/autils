@@ -1,5 +1,5 @@
 
-% UPDATE  Add/update the mass-mobility parameters in an existing prop structure. 
+% ADD  Add/update the mass-mobility parameters in an existing prop structure. 
 %  
 %  For example, this utility can add the mass-mobility information to a
 %  structure containing flow rates, temperature, presssure, and other
@@ -7,7 +7,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2021-10-06
 
-function prop = update(prop, f1, v1, f2, v2)
+function prop = add(prop, f1, v1, f2, v2)
 
 % Remove the relevant fields, to be replaced.
 prop = rmfield(prop, {'zet', 'Dm', 'm0', 'rho0', 'm100', 'rho100'});
