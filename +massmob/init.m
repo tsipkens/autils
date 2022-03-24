@@ -1,5 +1,5 @@
 
-% GEN  Fill in mass-mobility information using name-value pairs.
+% INIT  Fill in mass-mobility information using name-value pairs.
 %  Includes computing prop.m0, which is used for mp2zp and mp2dm.
 %  
 %  NAME-VALUE options (mass-mobility exponent +1 other required):
@@ -18,7 +18,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2021-03-25
 
-function prop = gen(prop_str1, val1, str2, val2)
+function prop = init(prop_str1, val1, str2, val2)
 
 % Check for presents.
 if ischar(prop_str1)

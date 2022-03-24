@@ -1,12 +1,14 @@
 
-% RHO_EFF  Computes the effective density from mass and mobility diameter.
+% RHOEFF  Computes the effective density from mass and mobility diameter.
 %  
-%  Expects mobility diameter in m and mass in kg.
+%  RHO = rhoeff(D,M) computes the effective density using the mobility
+%  diameter, D, and particle mass, M. Expects the mobility diameter, d, 
+%  to be in m and the mass to be in kg.
 %  
 %  AUTHOR: Timothy Sipkens, 2022-03-18
 
-function rho = rho_eff(dm, m)
+function rho = rhoeff(d, m)
 
-rho = 6 .* m ./ (pi .* dm .^ 3);
+rho = 6 .* m ./ (pi .* d .^ 3);
 
 end

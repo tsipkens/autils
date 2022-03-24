@@ -4,7 +4,7 @@
 clear;
 clc;
 
-prop = massmob.gen('universal')
+prop = massmob.init('universal')
 
 massmob.update(prop, 'zet', prop.zet, 'rho100', prop.rho100 * 2)
 
@@ -18,7 +18,7 @@ dm = mp2dm(mp * 1e-18, prop) * 1e9
 
 [B, Zp] = dm2zp(dm, 1)
 
-rho = rho_eff(dm * 1e-9, mp * 1e-18)
+rho = rhoeff(dm * 1e-9, mp * 1e-18)
 
 dq = hc(dg, 1.5, 3)
 N = hc(dg, 1.5, 0, 1)  % integrates to unity, as expected

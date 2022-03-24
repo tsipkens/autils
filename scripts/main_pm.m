@@ -13,7 +13,7 @@ chi = 1.0;
 n = 220;
 d = logspace(log10(10), log10(2e3), n)';
 
-prop = massmob.gen('universal');
+prop = massmob.init('universal');
 
 
 x0 = 1e6 .* normpdf(log(d), log(dg), log(sg)) .* (log(d(2)) - log(d(1)));

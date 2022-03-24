@@ -17,7 +17,7 @@ prop.(f1) = v1;
 prop.(f2) = v2;
 
 % Fill out remaining values.
-prop = massmob.gen(prop);
+prop = massmob.init(prop);
 
 end
 

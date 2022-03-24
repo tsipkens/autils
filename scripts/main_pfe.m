@@ -15,7 +15,7 @@ chi = 1.0;
 n = 80;
 d = logspace(log10(10), log10(2e3), n)';
 
-prop = massmob.gen('salt');
+prop = massmob.init('salt');
 
 % PFE parameters. 
 npfe0 = 0.8;
@@ -86,8 +86,10 @@ end
 % Plot size-resolved PFEs with uncertainty bounds.
 figure(2);
 cmap_sweep(size(xs_up, 2), internet);
-scatter(d, spfes, 8, 'o', 'filled', 'MarkerFaceAlpha', 1);
-hold on;
+for ii=1:size(spfes, 2)
+    scatter(d, spfes(:, ii), 8, 'o', 'filled', 'MarkerFaceAlpha', 1);
+    hold on;
+end
 scatter(d, spfe, 75, [0,0,0], 'o');
 plot(d, 1 - Pi, 'k');
 plot(d, 1 - Pi + 2 .* s_spfes0, 'k');
