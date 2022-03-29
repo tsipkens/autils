@@ -1,5 +1,5 @@
 
-% GET_MIE  Evaluates the sca/abs/ext efficiencies using Mie theory.
+% GET_MIE_EFF  Evaluates the sca/abs/ext efficiencies using Mie theory.
 %  
 %  QSCA = mie.get_mie(L, D, N) computes the scattering efficiency as a
 %  function fo wavelengths, L; diameters, D; and particle refractive 
@@ -23,7 +23,7 @@
 %   Timothy Sipkens, 2022 (modified)
 %   Steven Jacques, 2009 (original)
 
-function [qsca, qabs, qext] = get_mie(lam, d, n, nm, fv)
+function [qsca, qabs, qext] = get_eff(lam, d, n, nm, fv)
 
 %-- Parse inputs ------------------------------%
 if ~exist('nm', 'var'); nm = []; end
@@ -37,8 +37,8 @@ if ~isempty(fv)
     disp(max(rho));
 end
 
-lam = lam .* 1e-6;  % convert from m to micron
-d = d .* 1e-6;
+lam = lam .* 1e6;  % convert from m to micron
+d = d .* 1e6;
 %----------------------------------------------%
 
 
