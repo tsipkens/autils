@@ -69,7 +69,7 @@ pe_mpfe = [s_mpfe / mpfe, mpfe, mpfe - mpfe0]
 
 % MPFE via Hatch-Choate.
 [mpfe_hc, s_mpfe_hc] = pfe.mpfe_hc(x_up, x_down, d .* 1e-9, prop, Gx ./ ns, [], 0.01);
-pe_hc = [s_mpfe_hc / mpfe_hc, mpfe_hc, mpfe_hc - mpfe0]
+pe_mpfe_hc = [s_mpfe_hc / mpfe_hc, mpfe_hc, mpfe_hc - mpfe0]
 
 
 % Size-resolved filtration efficiencies.
@@ -100,5 +100,9 @@ plot(d, 1 - Pi - 2 .* s_spfe0, 'k');
 hold off;
 set(gca, 'XScale', 'log');
 ylim([0.5, 1.2]);
+
+
+% Scattering-weighted PFE.
+scapfe = pfe.scapfe_ni(x_up0, x_down0, d .* 1e-9, 532e-9)
 
 
