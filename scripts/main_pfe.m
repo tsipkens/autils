@@ -104,5 +104,6 @@ ylim([0.5, 1.2]);
 
 % Scattering-weighted PFE.
 scapfe = pfe.scapfe_ni(x_up0, x_down0, d .* 1e-9, 532e-9)
+scapfe_45 = pfe.scapfe_ni(x_up0, x_down0, d .* 1e-9, 532e-9, 45/180*pi)
 
 
