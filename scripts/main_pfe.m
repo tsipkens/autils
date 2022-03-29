@@ -14,6 +14,7 @@ chi = 1.0;
 
 n = 80;
 d = logspace(log10(10), log10(2e3), n)';
+d = logspace(log10(10), log10(5e3), 200)';
 
 prop = massmob.init('salt');
 

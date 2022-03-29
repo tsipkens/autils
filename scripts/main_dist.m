@@ -50,12 +50,25 @@ x = normpdf(log(d), log(cmd), log(sg)) .* (sqrt(2*pi) * log(sg));
 xm = normpdf(log(d), log(mmd), log(sg)) .* (sqrt(2*pi) * log(sg));
 xs = normpdf(log(d), log(smd), log(sg)) .* (sqrt(2*pi) * log(sg));
 
+Qsca = mie.get_mie(532e-9, d' .* 1e-9, 1.5442 + 0j)';
+Csca = Qsca .* (pi .* d .^ 2 ./ 4);
+xs2 = x .* Csca;
+xs2 = xs2 ./ max(xs2);
+
+figure(4);
+plot(d, Csca);
+hold on;
+plot(d, d .^ 6 .* Csca(1) ./ (d(1) .^ 6), 'k--');
+hold off;
+set(gca, 'XScale', 'log', 'YScale', 'log');
+
 
 figure(1);
 plot(d, x);
 hold on;
 plot(d, xm);
 plot(d, xs);
+plot(d, xs2);
 
 xline(cmd);
 xline(mmd);
@@ -68,15 +81,19 @@ hold off;
 set(gca, 'XScale', 'log');
 
 
+%{
+% Figure used for translating log-scales.
 figure(2);
 d2 = [10:10:100, 200:100:1000, 2000:1000:4000];
 da2 = dm2da(d2 .* 1e-9, rho, chi, 0) .* 1e9;
 loglog(d2, da2, '.');
 xlim([min(d2), max(d2)]);
 ylim([min(da2), max(da2)]);
+%}
 
 
-
+% Compare variants of aerodynamic diameter distributions.
+% Second variant does not assume zet = 3.
 figure(3);
 plot(da, x);
 hold on;
