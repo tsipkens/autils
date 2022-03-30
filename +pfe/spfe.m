@@ -8,6 +8,9 @@
 
 function [eta, s, G] = spfe(nup, ndown, Gup, Gdown, f_sampl)
 
+if ~exist('f_sampl', 'var'); f_sampl = []; end
+if isempty(f_sampl); f_sampl = 0; end
+
 P = ndown ./ nup;
 eta = 1 - P;
 

@@ -10,7 +10,7 @@ if ~exist('prop', 'var'); prop = []; end
 if isempty(prop)  % if not given, assume water density and spheres
     prop.zet = 3;
     prop.rho100 = 1000;
-elseif ~istruct(prop)
+elseif ~isstruct(prop)
     prop.zet = prop;  % value is just the mass-mobility exponent
     prop.rho100 = 1000;
 end
