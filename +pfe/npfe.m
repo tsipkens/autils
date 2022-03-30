@@ -11,7 +11,7 @@ function [eta, s, G] = npfe(nup, ndown, Gup, Gdown)
 Nup = nansum(nup);
 Ndown = nansum(ndown);
 
-P = Ndown / Nup;
+P = Ndown ./ Nup;
 eta = 1 - P;
 
 %-- UNCERTAINTIES --------------------------------------------------------%

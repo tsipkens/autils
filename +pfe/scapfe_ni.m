@@ -4,22 +4,11 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2022-03-26
 
-function eta = scapfe_ni(nup, ndown, di, l, the)
+function [eta, s, G] = scapfe_ni(nup, ndown, di, prop, Gup, Gdown, szet)
 
-if ~exist('the', 'var'); the = []; end
-
-if isempty(the)  % if no angle, use total scattering cross-section
-    Qsca = mie.get_eff(l, di, 1.5442 + 0j);
-    Csca = Qsca .* (pi .* di .^ 2 ./ 4);
-    
-else  % then use intensity at a specific angle
-    % Actually intensity, Csca is a common surrogate var.
-    Csca = mie.get_intensity(l, di, 1.5442 + 0j, [], the);
-    
-end
-
-P = sum(ndown .* Csca) ./ sum(nup .* Csca);
+P = sum(ndown .* di .^ 6) ./ sum(nup .* di .^ 6);
 
 eta = 1 - P;
 
 end
+

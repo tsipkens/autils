@@ -6,10 +6,19 @@
 
 function [eta, s, G] = mpfe_ni(nup, ndown, di, prop, Gup, Gdown, szet)
 
+if ~exist('prop', 'var'); prop = []; end
+if isempty(prop)  % if not given, assume water density and spheres
+    prop.zet = 3;
+    prop.rho100 = 1000;
+elseif ~istruct(prop)
+    prop.zet = prop;  % value is just the mass-mobility exponent
+    prop.rho100 = 1000;
+end
+
 Mup = pm.pm_ni(nup, di, prop);
 Mdown = pm.pm_ni(ndown, di, prop);
 
-P = Mdown / Mup;
+P = Mdown ./ Mup;
 eta = 1 - P;
 
 %-- UNCERTAINTIES --------------------------------------------------------%

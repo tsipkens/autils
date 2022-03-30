@@ -5,7 +5,7 @@ function [M, s, G] = pm_hc(Ni, di, prop, G)
 if ~exist('prop', 'var'); prop = []; end
 if isempty(prop)  % if not given, assume water density and spheres
     prop.zet = 3;
-    prop.k = 1000 * pi / 6;
+    prop.rho100 = 1000;
 end
 
 di = di .* 1e9;
@@ -13,8 +13,8 @@ di = di .* 1e9;
 [dg, sg] = get_geo(Ni, di);
 
 k = pi / 6 * prop.rho100 * (100^3) * 1e-27;
-H = hc(dg / 100, sg, prop.zet, k);
-M = H * nansum(Ni);  % output mass
+H = hc(dg ./ 100, sg, prop.zet, k);
+M = H .* nansum(Ni);  % output mass
 
 %-- UNCERTAINTIES --------------------------------------------------------%
 if exist('G', 'var')
