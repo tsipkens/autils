@@ -75,4 +75,4 @@ plot(d, pen .* xm);
 hold off;
 
 
-f.Position(3) = 1500;
+f.Position(3) = 1200;
