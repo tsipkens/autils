@@ -6,7 +6,8 @@ clc;
 
 prop = massmob.init('universal')
 
-massmob.update(prop, 'zet', prop.zet, 'rho100', prop.rho100 * 2)
+massmob.add(prop, 'zet', prop.zet, 'rho100', prop.rho100 * 2)
+massmob.update(prop, 'zet', 2.4)
 
 dg = 100;
 
