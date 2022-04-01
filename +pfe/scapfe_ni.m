@@ -4,11 +4,15 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2022-03-26
 
-function [eta, s, G] = scapfe_ni(nup, ndown, di, prop, Gup, Gdown, szet)
+function [eta, s, G] = scapfe_ni(nup, ndown, int)
 
-P = sum(ndown .* di .^ 6) ./ sum(nup .* di .^ 6);
+P = sum(ndown .* int) ./ sum(nup .* int);
 
 eta = 1 - P;
 
-end
+%-- UNCERTAINTIES --------------------------------------------------------%
+% Not yet defined.
+s = [];  G = [];
+%-------------------------------------------------------------------------%
 
+end

@@ -11,7 +11,7 @@ close all;
 clc;
 
 n = 1.5442 + 0j; % particle refractive index (salt)
-% npar = 2 + 1j; % particle refractive index (soot)
+% n = 2 + 1j; % particle refractive index (soot)
 
 l = [0.532, 1.064] .* 1e-6; % [m] (starting wavelength, interval, ending wavelength)
 d = logspace(log10(0.02), log10(2), 450)' .* 1e-6; % [m]  list them, [a b c], up to three particle diameters

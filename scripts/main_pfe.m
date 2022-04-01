@@ -14,13 +14,13 @@ chi = 1.0;
 
 n = 80;
 d = logspace(log10(10), log10(2e3), n)';
-d = logspace(log10(10), log10(5e3), 200)';
+d = logspace(log10(5), log10(2e3), 80)';
 
 prop = massmob.init('salt');
 
 % PFE parameters. 
-npfe0 = 0.8;
-dmpps = 160;
+npfe0 = 0.7
+dmpps = 200;
 spfe = 3.5;
 
 x_up0 = 1e6 .* normpdf(log(d), log(dg), log(sg)) .* (log(d(2)) - log(d(1)));
@@ -61,15 +61,20 @@ set(gca, 'XScale', 'log');
 
 % Number-based PFE.
 [npfe, s_npfe] = pfe.npfe(x_up, x_down, Gx ./ ns, []);
-pe_npfe = [s_npfe / npfe, npfe, npfe - npfe0]
+pe_npfe = [npfe, s_npfe / npfe, npfe - npfe0]
 
 % MPFE via numerical integration.
 [mpfe, s_mpfe] = pfe.mpfe_ni(x_up, x_down, d .* 1e-9, prop, Gx ./ ns, [], 0.01);
-pe_mpfe = [s_mpfe / mpfe, mpfe, mpfe - mpfe0]
+pe_mpfe_ni = [mpfe, s_mpfe / mpfe, mpfe - mpfe0]
 
 % MPFE via Hatch-Choate.
 [mpfe_hc, s_mpfe_hc] = pfe.mpfe_hc(x_up, x_down, d .* 1e-9, prop, Gx ./ ns, [], 0.01);
-pe_mpfe_hc = [s_mpfe_hc / mpfe_hc, mpfe_hc, mpfe_hc - mpfe0]
+pe_mpfe_hc = [mpfe_hc, s_mpfe_hc / mpfe_hc, mpfe_hc - mpfe0]
+
+% Scattering-based PFE via numerical integration.
+ri = 1.5442 + 0j;  % particle refractive index (salt)
+int = mie.get_intensity(532e-9, d .* 1e-9, ri, [], 45/180*pi);
+scapfe_45 = pfe.scapfe_ni(x_up0, x_down0, int)
 
 
 % Size-resolved filtration efficiencies.
@@ -100,10 +105,16 @@ plot(d, 1 - Pi - 2 .* s_spfe0, 'k');
 hold off;
 set(gca, 'XScale', 'log');
 ylim([0.5, 1.2]);
+xlim([min(d), max(d)]);
 
 
-% Scattering-weighted PFE.
-scapfe = pfe.scapfe_ni(x_up0, x_down0, d .* 1e-9, 532e-9)
-scapfe_45 = pfe.scapfe_ni(x_up0, x_down0, d .* 1e-9, 532e-9, 45/180*pi)
+figure(3);
+plot(d, x_up0 ./ max(x_up0));
+hold on;
+plot(d, x_down0 ./ max(x_up0));
+plot(d, Pi);
+hold off;
+set(gca, 'XScale', 'log');
+xlim([min(d), max(d)]);
 
 
