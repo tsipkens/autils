@@ -35,17 +35,13 @@ x = pi .* d ./ (lam ./ nm);  % size parameter
 s1 = zeros(size(x));  % initialize arrays
 s2 = s1;
 
-disp('Getting scattering intensities:');
-tools.textbar([0, size(d, 1)]);
 for ii=1:size(d, 1)  % loop over wavelength and diameter
-    for jj=1:length(lam)
+    for jj=1:size(lam, 2)
         for kk=1:length(the)
             [s1(ii,jj,kk), s2(ii,jj,kk)] = mie.mie_s12(m(ii,jj), x(ii,jj), the(kk));
         end
     end
-    tools.textbar([ii, size(d, 1)]);
 end
-disp(' ');  % empty line after finishing
 
 sl = squeeze(real(s1) .^ 2 + imag(s1) .^ 2);  % perpindicular
 sr = squeeze(real(s2) .^ 2 + imag(s2) .^ 2);  % parallel
