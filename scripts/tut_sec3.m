@@ -29,6 +29,8 @@ plot(vec, (tau .* vec) .^ 2);  % multiplicative
 plot(vec, (tau .* vec) .^ 2 + the .* vec + gam .^ 2);  % PGM
 hold off;
 
+ylabel('Variance');
+xlabel('Mean / Expected value')
 ylim(limy);
 
 
