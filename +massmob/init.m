@@ -36,6 +36,9 @@ if ischar(prop_str1)
         case {'universal', 'soot'}  % universal soot relation (Olfert and Rogak)
             prop_str1 = 'zet';  val1 = 2.48;
             str2 = 'rho100';    val2 = 510;
+        case 'water'  % water spheres
+            prop_str1 = 'zet';  val1 = 3;
+            str2 = 'rho100';    val2 = 1000;
     end
 end
 
