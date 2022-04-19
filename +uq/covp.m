@@ -22,9 +22,9 @@
 %   variable.
 %   
 %   COVP(X,MODEL,STD) uses the standard deviations in STD in the place of
-%   computing a standard deviation from X. Both STD and X should be vectors
-%   of the same length.
-%  
+%   computing a standard deviation from X. X should contain the means or
+%   expected values. Both STD and X should be vectors of the same length.
+%   
 %   COVP(...,F_PLOT) adds a flag for whether or not to show a diagnostic 
 %   plot, which shows the adequacy of the fitting procedure. 
 %  
