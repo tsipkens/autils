@@ -32,7 +32,7 @@ if exist('G', 'var')
     end
     
     G = J' * G * J;  % LPU
-    s = sqrt(diag(G));  % compute standard errors from covariance
+    s = sqrt(G);  % compute standard errors from covariance
 end
 %-------------------------------------------------------------------------%
 

@@ -4,16 +4,14 @@ function [M, s, G] = pm_hc(Ni, di, prop, G)
 
 if ~exist('prop', 'var'); prop = []; end
 if isempty(prop)  % if not given, assume water density and spheres
-    prop.zet = 3;
-    prop.rho100 = 1000;
+    prop = massmob.init('water');
 end
 
 di = di .* 1e9;
 
 [dg, sg] = get_geo(Ni, di);
 
-k = pi / 6 * prop.rho100 * (100^3) * 1e-27;
-H = hc(dg ./ 100, sg, prop.zet, k);
+H = hc(dg, sg, prop.zet, prop.k);
 M = H .* nansum(Ni);  % output mass
 
 %-- UNCERTAINTIES --------------------------------------------------------%
@@ -26,15 +24,15 @@ if exist('G', 'var')
     
     % Compute Jacobian. 
     Di = 1 + prop.zet .* (log(di) - log(dg)) + ...
-        prop.zet ^ 2 .* ((log(di) - log(dg)) .^ 2 + log(sg) .^ 2);
+        prop.zet ^ 2 ./ 2 .* ((log(di) - log(dg)) .^ 2 + log(sg) .^ 2);
     J = H .* Di;  % Jacobian
     if size(G, 1) == (length(di) + 2)  % then mass-mobility uncertainties are incl.
-        J = [J; M ./ prop.rho100; k .* ...
-            M * (prop.zet * log(sg) ^ 2 + log(dg))];
+        J = [J; M ./ prop.rho100;  ...
+            prop.k * M * (prop.zet * log(sg) ^ 2 + log(dg))];
     end
     
     G = J' * G * J;  % LPU
-    s = sqrt(diag(G));  % compute standard errors from covariance
+    s = sqrt(G);  % compute standard errors from covariance
 end
 %-------------------------------------------------------------------------%
 
