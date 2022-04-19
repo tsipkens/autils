@@ -14,11 +14,18 @@
 %  `massmob.update(...)` to add mass-mobility parameters to an existing 
 %  prop structure. 
 %  
+%  PROP = massmob.init(..., D) adds an input for diameter to be used with 
+%  STR = 'rhod' or STR = 'md', which corresponds to effective density or
+%  mass at a diameter of D.
+%  
 %  ------------------------------------------------------------------------
 %  
 %  AUTHOR: Timothy Sipkens, 2021-03-25
 
-function prop = init(prop_str1, val1, str2, val2)
+function prop = init(prop_str1, val1, str2, val2, d)
+
+if ~exist('d', 'var'); d = []; end
+if isempty(d); d = 100; end
 
 % Check for presents.
 if ischar(prop_str1)
@@ -58,6 +65,9 @@ end
 if ~isfield(prop, 'm0')
     if isfield(prop, 'm100')
         prop.m0 = prop.m100 * (1 / 100) ^ prop.zet;
+
+    elseif isfield(prop, 'md')
+        prop.m0 = prop.md * (1 / d * 1e9) ^ prop.zet;
         
     elseif isfield(prop, 'rho0')
         prop.m0 = prop.rho0 * pi / 6 * 1e-27;
@@ -66,14 +76,26 @@ if ~isfield(prop, 'm0')
         prop.m100 = prop.rho100 * pi / 6 * (100e-9) ^ 3;
         prop.m0 = prop.m100 * (1 / 100) ^ prop.zet;
         
+    elseif isfield(prop, 'rhod')
+        prop.md = prop.rhod * pi / 6 * d ^ 3;
+        prop.m0 = prop.md * (1 / (d * 1e9)) ^ prop.zet;
+        
     else
         error('Could not compute prop.m0.');
     end
 end
 
-prop.rho0 = prop.m0 * 6 / pi * 1e27;
+% Fill out parameters.
 prop.m100 = prop.m0 / (1 / 100) ^ prop.zet;
+prop.rho0 = prop.m0 * 6 / pi * 1e27;
 prop.rho100 = prop.m100 * 6 / pi / (100e-9 ^ 3);
 prop.k = prop.m0;  % copy to k (alternative notation)
+
+% If an additional diameter was specified, reproduce.
+if d ~= 100
+    prop.d = d;
+    prop.md = prop.m0 / (1 / (d * 1e9)) ^ prop.zet;
+    prop.rhod = prop.md * 6 / pi / (d ^ 3);
+end
 
 end
