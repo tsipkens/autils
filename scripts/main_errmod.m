@@ -10,13 +10,13 @@ clc;
 % Load mu and sig from real SMPS signal.
 load('data/smps1.mat');
 
-[~, tau, the, gam] = uq.covp(mu, 'pgm', sig);
+[~, tau, the, gam] = uq.covp(mu1, 'pgm', sig1);
 
 
 figure(1);
 
 %-- Real SMPS signal represented with PGM error model --------------------%
-plot(mu, sig .^ 2, '.');
+plot(mu1, sig1 .^ 2, '.');
 set(gca, 'XScale', 'log', 'YScale', 'log');
 
 limy = ylim;
@@ -35,9 +35,9 @@ ylim(limy);
 
 %-- Simulation Poisson signal --------------------------------------------%
 the2 = 10;
-s2 = uq.add_noise(mu./ 5, 0, the2, 0, 200);
+s2 = uq.add_noise(mu1 ./ 5, 0, the2, 0, 200);
 hold on;
-plot(mu ./ 5, var(s2, [], 2), '.');
+plot(mu1 ./ 5, var(s2, [], 2), '.');
 plot(vec, the2 .* vec)
 hold off;
 
