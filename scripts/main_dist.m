@@ -15,6 +15,8 @@ chi = 1.0;
 prop = massmob.init('salt');
 rho = prop.rho100;
 
+prop.chi = chi;
+
 
 
 n = 2e3;
@@ -55,16 +57,27 @@ Qsca = mie.get_eff(532e-9, d' .* 1e-9, 1.5442 + 0j)';
 Csca1 = Qsca .* (pi .* d .^ 2 ./ 4);
 
 % 45 degree scattering.
-Csca = mie.get_intensity(532e-9, d' .* 1e-9, 1.5442 + 0j, [], 45/180*pi)';
+Csca0 = mie.get_intensity(532e-9, d' .* 1e-9, 1.5442 + 0j, [], 45/180*pi)';
 
-xs2 = x .* Csca;
+% 40-50 degree scattering.
+Csca2 = mie.get_intensity(532e-9, d' .* 1e-9, 1.5442 + 0j, [], ...
+    linspace(30, 60, 25)./180.*pi)';
+Csca2 = mean(Csca2);
+
+xs0 = x .* Csca0;
+xs0 = xs0 ./ max(xs0);
+
+xs1 = x .* Csca1;
+xs1 = xs1 ./ max(xs1);
+
+xs2 = x .* Csca2;
 xs2 = xs2 ./ max(xs2);
 
 figure(4);
-plot(d, Csca);
+plot(d, Csca0);
 hold on;
 plot(d, Csca1);
-plot(d, d .^ 6 .* Csca(1) ./ (d(1) .^ 6), 'k--');
+plot(d, d .^ 6 .* Csca0(1) ./ (d(1) .^ 6), 'k--');
 hold off;
 set(gca, 'XScale', 'log', 'YScale', 'log');
 
@@ -74,6 +87,8 @@ plot(d, x);
 hold on;
 plot(d, xm);
 plot(d, xs);
+plot(d, xs0);
+plot(d, xs1);
 plot(d, xs2);
 
 xline(cmd);
