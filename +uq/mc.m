@@ -7,7 +7,7 @@ function [y, s, smpl, f_smpl] = mc(x, Gx, f, n)
 
 % If vector of variances supplied.
 if any(size(Gx) == 1)
-    Gx = diag(Gx);
+    Gx = diag(Gx .^ 2);
 end
 
 smpl = mvnrnd(x, Gx, n)';
