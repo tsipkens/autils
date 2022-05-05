@@ -47,17 +47,6 @@ x_down = mean(xs_down(:, 1:ns2), 2);  % only consider first three in mean (more 
 sx_up = sqrt(diag(Gx(1:length(d), 1:length(d))));
 sx_down = sqrt(diag(Gx(length(d)+1:end, length(d)+1:end)));
 
-figure(1);
-plot(d, x_up0, 'k');
-hold on;
-plot(d, x_down0, 'k');
-plot(d, Pi .* max(x_up0), 'r');
-plot(d, x_up0 + 2 .* sx_up, 'k');
-plot(d, x_up0 - 2 .* sx_up, 'k');
-plot(d, x_down0 + 2 .* sx_down, 'k');
-plot(d, x_down0 - 2 .* sx_down, 'k');
-hold off;
-set(gca, 'XScale', 'log');
 
 % Number-based PFE.
 [npfe, s_npfe] = pfe.npfe(x_up, x_down, Gx ./ ns, []);

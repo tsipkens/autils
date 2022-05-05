@@ -13,8 +13,8 @@ N1 = 2e4;  % upstream number
 N2 = P .* N1;  % downstream number
 
 % Size of grid.
-n1 = 105;
-n2 = 120;
+n1 = 20; % 105;
+n2 = 21; % 120;
 
 
 s1 = linspace(0.005, 0.4, n1);  % relative error, std(N1)/N1
@@ -49,6 +49,7 @@ sp_prct = [];
 sp_std = [];
 ps = {};
 smpl = {};
+ns = 1e4;
 for jj=1:n2
     for ii=1:n1
         [~, ~, smpl{ii,jj}, ps{ii,jj}] = uq.mc([N1, N2], ...
@@ -58,9 +59,10 @@ for jj=1:n2
         %     [s1(ii), s2(jj)], ...
         %     @(x) x(2,:) ./ x(1,:), 1e4);
         
+        ps2 = ps;
         ps2{ii,jj}(any(smpl{ii,jj} < eps)) = []; % remove negative number concentrations
         ps2{ii,jj} = rmoutliers(ps2{ii,jj}, 'median', 'ThresholdFactor', 20);
-
+        
         % Average percentile intervals to approx. std. dev.
         sp_prct(ii,jj) = (prctile(ps2{ii,jj}, 83) - prctile(ps2{ii,jj}, 17)) ./ P ./ 2;
         sp_std(ii,jj) = std(ps2{ii,jj});
@@ -131,10 +133,32 @@ yc = min(3, max(-3, yc));
 yc = ceil((0.5 + yc ./ 6) .* nc + eps);
 
 figure(5);
+subplot(1,5,2:4);
 for ii=1:5:l
-    plot([0;1], [y(ii); ps{n1,n2}(1,idx(ii))], 'Color', [cm(ceil(ii ./ l .* 200),:), 0.3]);
+    plot([0;1], [y(ii); ps{n1,n2}(1,idx(ii))], ...
+        'Color', [cm(ceil(ii ./ l .* 200),:), 0.2], 'LineWidth', 1);
     hold on;
 end
 hold off;
 xlim([0, 1]);
 ylim([0, 2.2]);
+
+% Plot left panel.
+subplot(1,5,1);
+[yh,xh] = histcounts(smpl{end,end}(1,:) ./ mean(smpl{end,end}(1,:)));
+stairs([yh,0], xh, 'k');
+set(gca, 'XDir', 'reverse','xtick',[]);
+ylim([0, 2.2]);
+xlabel('No. of samples');
+ylabel('N_1 / mean(N_1)');
+
+% Plot right panel.
+subplot(1,5,5);
+[yh,xh] = histcounts(ps{n1,n2}(1,:));
+stairs([yh,0], xh, 'k');
+set(gca,'YAxisLocation','right','xtick',[]);
+ylim([0, 2.2]);
+xlabel('No. of samples');
+ylabel('Penetration');
+
+

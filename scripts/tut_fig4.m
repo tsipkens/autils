@@ -120,7 +120,14 @@ hold on;
 stairs([hx(1), hx], [0, hyh, 0]);
 plot(vec, normpdf(vec, M_ni ./ M0(1), s_ni ./ M0(1)) .* sqrt(2*pi) .* s_ni ./ M0(1) .* max(hy));
 plot(vec, normpdf(vec, M_hcs ./ M0(1), s_hcs ./ M0(1)) .* sqrt(2*pi) .* s_ni ./ M0(1) .* max(hy));
+plot(vec, normpdf(vec, M_hcl ./ M0(1), s_hcl ./ M0(1)) .* sqrt(2*pi) .* s_ni ./ M0(1) .* max(hy));
 xline(1);
+xline((M_ni + s_ni) ./ M0(1), 'r');
+xline((M_hcs + s_hcs) ./ M0(1), 'g');
+xline((M_hcl + s_hcl) ./ M0(1), 'b');
+xline((M_ni - s_ni) ./ M0(1), 'r');
+xline((M_hcs - s_hcs) ./ M0(1), 'g');
+xline((M_hcl - s_hcl) ./ M0(1), 'b');
 hold off;
 
 xlim([0.7, 1.3]);

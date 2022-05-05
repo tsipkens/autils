@@ -33,8 +33,6 @@ ylabel('Variance');
 xlabel('Mean / Expected value')
 ylim(limy);
 
-
-
 %-- Simulation Poisson signal --------------------------------------------%
 the2 = 10;
 s2 = uq.add_noise(mu1 ./ 5, 0, the2, 0, 200);
