@@ -2,6 +2,7 @@
 % A script to generate Fig. 4 of Sipkens et al.
 
 clear;
+close all;
 addpath cmap;
 
 N = 2e4;
