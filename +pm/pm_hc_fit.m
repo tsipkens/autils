@@ -19,14 +19,26 @@ M = H .* nansum(Ni);  % output mass
 
 %-- UNCERTAINTIES --------------------------------------------------------%
 if exist('G', 'var')
-    Gn = G(1:(end-2),1:(end-2));  % cov in Ni
+    if size(G, 1) == (length(di) + 2)
+        Gn = G(1:(end-2),1:(end-2));  % cov in Ni
+    end
 
     Gg = inv(Jg' * (Gn \ Jg));  % propagate through inverse procedure
     Gg = Gg(2:end, 2:end); % just dg and sg contributions
     
     % Jacobian and covariance for Hatch-Choate step.
+    % J = [N, dg, sg]
     J = [H; M * prop.zet / dg; M * prop.zet ^ 2 * log(sg)];
-    G = blkdiag(sum(sum(Gn)), Gg);
+    
+
+    if size(G, 1) == (length(di) + 2)  % then mass-mobility uncertainties are incl.
+        J = [J; M ./ prop.rho100;  ...
+            M * (prop.zet * log(sg) ^ 2 + log(dg ./ 100))];
+        G = blkdiag(sum(sum(Gn)), ...
+            Gg, G((end-1):end, (end-1):end));
+    else  % otherwise get G
+        G = blkdiag(sum(sum(Gn)), Gg);
+    end
     G = J' * G * J;  % LPU
     
     s = sqrt(G);

@@ -1,6 +1,9 @@
 
+% PM_NI  Compute the PM concentration via numerical integration.
+%  
+%  AUTHOR: Timothy Sipkens, 04-2022
 
-function [M, s, G] = pm_ni(Ni, di, prop, G)
+function [M, s, G, J] = pm_ni(Ni, di, prop, G)
 
 if ~exist('prop', 'var'); prop = []; end
 if isempty(prop)  % if not given, assume water density and spheres

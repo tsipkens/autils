@@ -13,9 +13,10 @@ N1 = 2e4;  % upstream number
 N2 = P .* N1;  % downstream number
 
 % Size of grid.
-n1 = 20; % 105;
-n2 = 21; % 120;
-
+% n1 = 20;
+% n2 = 21;
+n1 = 105;
+n2 = 120;
 
 s1 = linspace(0.005, 0.4, n1);  % relative error, std(N1)/N1
 s2 = linspace(0.005, 0.6, n2);  % relative error, std(N2)/N2
@@ -95,7 +96,7 @@ hold off;
 % Format plot.
 colorbar;
 addpath('cmap');
-colormap(flipud(tokyo));
+colormap(flipud(internet));
 set(gca, 'YDir', 'normal');
 ylabel('se(N_1)/N_1');
 xlabel('se(N_2)/N_2');
