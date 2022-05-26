@@ -10,7 +10,12 @@
 function prop = add(prop, f1, v1, f2, v2)
 
 % Remove the relevant fields, to be replaced.
-prop = rmfield(prop, {'zet', 'Dm', 'm0', 'rho0', 'm100', 'rho100'});
+fields = {'zet', 'Dm', 'm0', 'rho0', 'm100', 'rho100'};
+for ii=1:length(fields)
+    if isfield(prop, fields{ii})
+        prop = rmfield(prop, fields{ii});
+    end
+end
 
 % Add new values.
 prop.(f1) = v1;
