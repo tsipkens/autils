@@ -13,7 +13,7 @@ load('data/smps1.mat');
 [~, tau, the, gam] = uq.covp(mu1, 'pgm', sig1);
 
 
-figure(1);
+figure(2);
 
 %-- Real SMPS signal represented with PGM error model --------------------%
 plot(mu1, sig1 .^ 2, '.');
