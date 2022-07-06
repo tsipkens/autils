@@ -2,7 +2,7 @@
 % DM2MP  Calculate particle mass from a mobility diameter using mass-mobility relation.
 %  
 %  M = dm2mp(D,PROP) computes the particle mass from the mass-mobility
-%  relation parameters in PROP (specifically PROP.Dm and prop.m0). 
+%  relation parameters in PROP (specifically PROP.zet and PROP.m0). 
 %  Expects DM is to be given in m, and the output will be given in kg.
 % 
 %  ------------------------------------------------------------------------
