@@ -23,4 +23,3 @@ sa = exp( ...
     log(sd));  % aerodynamic diameter, count distribution GSD
 
 end
-
