@@ -25,22 +25,18 @@ d = logspace(log10(10), log10(2e3), n);
 f_aero = 0;
 
 cmd = dg
-[cmad, cmvd] = dm2da(cmd .* 1e-9, rho, chi, f_aero);
+[cmad, cmvd] = dm2da(cmd .* 1e-9, dm2rhoeff(cmd .* 1e-9, prop), chi, f_aero);
 cmad = cmad .* 1e9
 cmvd = cmvd .* 1e9
 
 mmd = hc(dg, sg, 3)
 smd = hc(dg, sg, 6)
-[mmad, mmvd] = dm2da(mmd .* 1e-9, rho, chi, f_aero);
+[mmad, mmvd] = dm2da(mmd .* 1e-9, dm2rhoeff(mmd .* 1e-9, prop), chi, f_aero);
 
-da = dm2da(d .* 1e-9, rho, chi, f_aero) .* 1e9;
+da = dm2da(d .* 1e-9, dm2rhoeff(d .* 1e-9, prop), chi, f_aero) .* 1e9;
 
 
-sga = exp( ...
-    (log(dm2da(exp(log(dg) .* 1.05) .* 1e-9, rho, chi, f_aero)) - ...
-     log(dm2da(exp(log(dg) .* 0.95) .* 1e-9, rho, chi, f_aero))) ./ ...
-    (0.1 .* log(dg)) .* ...
-    log(sg))  % aerodynamic diameter, count distribution GSD
+sga = sdm2sda(sg, dg * 1e-9, prop, chi, f_aero)  % aerodynamic diameter, count distribution GSD
 
 mmad = mmad .* 1e9
 mmvd = mmvd .* 1e9
