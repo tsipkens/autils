@@ -24,7 +24,7 @@ else
 end
 
 
-% Use the mass-mobility relationship to get teh new GSD.
+% Use the mass-mobility relationship to get the new GSD.
 sm = exp(log(sd) .* zet);
 
 end
