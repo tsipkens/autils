@@ -11,6 +11,6 @@
 
 function dve = dm2dve(dm, prop)
 
-dve = dm .* (dm2rhoeff(dm, prop) ./ prop.rhom) .^ (1 / 3);
+dve = dm .* (dm2rhoeff(dm, prop) ./ prop.rhom) .^ (1/3);
 
 end

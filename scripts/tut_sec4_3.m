@@ -1,5 +1,6 @@
 
-% A script demonstrating uncertainties in penetration,
+% A script demonstrating uncertainties in penetration.
+%  Runtimes on the order of 1-2 minutes.
 %  
 %  AUTHOR: Timothy Sipkens: 2022-04-29
 
