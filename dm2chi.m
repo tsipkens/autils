@@ -17,9 +17,17 @@ end
 dve = dm2dve(dm, prop);
 
 chi = dm ./ dve;
-
 if f_iter
-    chi = (dm ./ dve .* Cc(dve) ./ Cc(dm));
+    chi = chi ./ Cc(dm) .* Cc(dve);
 end
+
+%{
+% Alternate form.
+b = (6/pi * prop.k * 1e9 ^ prop.zet / prop.rhom) ^ (1/3);
+chi = dm .^ (1 - prop.zet/3) ./ b;
+if f_iter
+    chi = chi ./ Cc(dm) .* Cc(b .* dm .^ (prop.zet/3));
+end
+%}
 
 end

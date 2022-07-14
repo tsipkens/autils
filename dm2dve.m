@@ -13,4 +13,10 @@ function dve = dm2dve(dm, prop)
 
 dve = dm .* (dm2rhoeff(dm, prop) ./ prop.rhom) .^ (1/3);
 
+%{
+% Alternate form.
+b = (6/pi * prop.k * 1e9 ^ prop.zet / prop.rhom) ^ (1/3);
+dve = b .* dm .^ (prop.zet/3);
+%}
+
 end
