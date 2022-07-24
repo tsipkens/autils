@@ -7,6 +7,9 @@ clc;
 
 prop = massmob.init('universal');
 prop.rhom = 1800;
+prop.dp100 = 17.8e-9;
+Dalp = 1.1;
+prop.Dtem = (2 * Dalp - prop.Dm) / (2 * Dalp - 3);
 prop
 
 massmob.add(prop, 'zet', prop.zet, 'rho100', prop.rho100 * 2)
@@ -75,5 +78,7 @@ mpfe_ni = pfe.mpfe_ni(p, (1 - pfe0) .* p, d, prop)
 mpfe_hc = pfe.mpfe_hc(p, (1 - pfe0) .* p, d, prop)
 scapfe_hc = pfe.scapfe_ni(p, (1 - pfe0) .* p, ones(size(p)))
 
+
+tbl = working.dm2tbl(dg .* 1e-9, prop)
 
 
