@@ -8,7 +8,7 @@ close all;
 addpath cmap;
 
 % Parameters for distribution.
-N0 = 1e4;  % total number (used to scale distribution and QoI)
+N0 = 1e5;  % total number (used to scale distribution and QoI) < CHANGE THIS
 dg = 100;  % GMD
 sg = 1.6;  % GSD
 
@@ -29,7 +29,6 @@ red = N ./ N0  % value relative to true quantity
 figure(1);
 dmax = max(d);
 stairs([d; d(end); dmax] - dd/2, [Ni ./ sum(Ni .* dd); 0; 0], 'k');
-
 set(gca, 'XScale', 'log');
 xlim([min(d), dmax]);
 
@@ -44,12 +43,31 @@ rel = sqrt(Gn) ./ N0  % relative error
 Nis = mvnrnd(Ni, Gni, 1e4)';  % sample number concentrations for each size bin
 Ns = sum(Nis);
 
+% Propagate errors via Monte Carlo, using a resampling method.
+Nirs = uq.resample(Nis(:, 1:10), 1e4);  % resample using first few noisy signals
+Nrs = sum(Nirs);
+
+
+%-- FIG: First few samples --%
+figure(2);
+dmax = max(d);
+stairs([d; d(end); dmax] - dd/2, [Nis(:,1:3) ./ sum(Nis(:,1:3) .* dd); 0,0,0; 0,0,0]);
+set(gca, 'XScale', 'log');
+xlim([min(d), dmax]);
+
 %-- FIG: Plot of uncertainties in N --%
-figure(3);
+figure(4);
 [hy, hx] = histcounts(Ns ./ N0);  % bin, relative to true N
 dhx = hx(2) - hx(1);
 hy = hy ./ max(hy);
 stairs([hx, hx(end)] - dhx, [0, hy, 0], 'k');
+
+[hy, hx] = histcounts(Nrs ./ N0);  % bin, relative to true N
+dhx = hx(2) - hx(1);
+hy = hy ./ max(hy);
+hold on;
+stairs([hx, hx(end)] - dhx, [0, hy, 0], 'g');
+hold off;
 
 xvec = linspace(min(hx), max(hx), 150);
 hold on;
