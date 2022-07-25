@@ -1,6 +1,6 @@
 
 % A script demonstrating error corruption of Gaussian signals.
-%  Roughly recreates Fig. 1.
+%  Roughly recreates Fig. 2.
 %  
 %  AUTHOR: Timothy Sipkens: 2022-06-23
 

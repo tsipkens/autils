@@ -1,5 +1,5 @@
 
-% A script to generate Fig. 4 of Sipkens et al.
+% A script to generate Fig. 6 of Sipkens et al.
 
 clear;
 close all;
