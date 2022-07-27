@@ -7,8 +7,10 @@ clear;
 close all;
 addpath cmap;
 
+%== SIGNAL GENERATION ====================================================%
+% Can be replaced by your own signals.
 % Parameters for distribution.
-N0 = 1e5;  % total number (used to scale distribution and QoI) < CHANGE THIS
+N0 = 1e5;  % total number (used to scale distribution and QoI)   < CHANGE THIS
 dg = 100;  % GMD
 sg = 1.6;  % GSD
 
@@ -19,60 +21,75 @@ dd = log(d(2)) - log(d(1));  % element size in log-space
 
 % Compute distribution and noisy data.
 p = normpdf(log(d), log(dg), log(sg)) .* dd;  % noiseless particle size distribution
-[Ni, ~, Gni] = uq.add_noise(N0 .* p, 0, 1, 0, 1, 10);  % add noise
+[Ni, ~, Gni0] = uq.add_noise(N0 .* p, 0, 1, 0, 20, 10);  % add noise
+%=========================================================================%
 
-% Compute number concentration from noisy data.
-N = sum(Ni);  % compute number concentration
-red = N ./ N0  % value relative to true quantity
 
-%-- FIG: Noisy input data --%
+% Get expected value/mean.
+Ni_bar = mean(Ni, 2);
+
+% Ways to compute covariance. 
+Gni = Gni0;           % (1) uses true covariance from error model above
+% Gni = cov(Ni');       % (2) use covariance computed from repeats
+% Gni = uq.covp(Ni');   % (3) fit a PGM error model to repeats
+
+
+% Compute the expected value for number concentration from noisy data.
+N = sum(Ni_bar);  % compute number concentration
+red = N ./ N0     % value relative to true quantity
+
+
+%-- FIG: A single noisy signal used as input data --%
 figure(1);
 dmax = max(d);
-stairs([d; d(end); dmax] - dd/2, [Ni ./ sum(Ni .* dd); 0; 0], 'k');
+stairs([d; d(end); dmax] - dd/2, [Ni(:,1) ./ sum(Ni(:,1) .* dd); 0; 0], 'k');
 set(gca, 'XScale', 'log');
 xlim([min(d), dmax]);
 
 
 
 % Propagate errors via LPU.
-J = ones(size(Ni));  % Jacobian
-Gn = J' * Gni * J;  % LPU
-rel = sqrt(Gn) ./ N0  % relative error
+J = ones(size(Ni_bar));  % Jacobian
+Gn = J' * Gni * J;       % LPU
+rel = sqrt(Gn) ./ N0     % relative error
 
 % Propagate errors via Monte Carlo.
-Nis = mvnrnd(Ni, Gni, 1e4)';  % sample number concentrations for each size bin
-Ns = sum(Nis);
+Nis = mvnrnd(Ni_bar, Gni, 1e4)';  % sample number concentrations for each size bin
+Ns = sum(Nis);  % samples of QoI
 
 % Propagate errors via Monte Carlo, using a resampling method.
 Nirs = uq.resample(Nis(:, 1:10), 1e4);  % resample using first few noisy signals
-Nrs = sum(Nirs);
+Nrs = sum(Nirs);  % samples of QoI
 
 
-%-- FIG: First few samples --%
-figure(2);
-dmax = max(d);
-stairs([d; d(end); dmax] - dd/2, [Nis(:,1:3) ./ sum(Nis(:,1:3) .* dd); 0,0,0; 0,0,0]);
-set(gca, 'XScale', 'log');
-xlim([min(d), dmax]);
 
 %-- FIG: Plot of uncertainties in N --%
 figure(4);
+
+% Plot Monte Carlo.
 [hy, hx] = histcounts(Ns ./ N0);  % bin, relative to true N
 dhx = hx(2) - hx(1);
+ymax = max(hy);
 hy = hy ./ max(hy);
 stairs([hx, hx(end)] - dhx, [0, hy, 0], 'k');
 
+% Plot bootstrapping.
 [hy, hx] = histcounts(Nrs ./ N0);  % bin, relative to true N
 dhx = hx(2) - hx(1);
-hy = hy ./ max(hy);
+hy = hy ./ ymax;
 hold on;
 stairs([hx, hx(end)] - dhx, [0, hy, 0], 'g');
 hold off;
 
+% Plot LPU-implied.
 xvec = linspace(min(hx), max(hx), 150);
 hold on;
-plot(xvec, normpdf(xvec, N ./ N0, sqrt(Gn) ./ N0) .* sqrt(2*pi * Gn) ./ N0);
+plot(xvec, normpdf(xvec, N ./ N0, sqrt(Gn) ./ N0) .* sqrt(2*pi * Gn) ./ N0, 'r');
 hold off;
+
+ylabel('Counts, pdf');
+xlabel('Total number concentration (scaled by true value), N/N0');
+legend({'Monte Carlo (mean/var)', 'Bootstrapping', 'LPU-implied'});
 
 
 

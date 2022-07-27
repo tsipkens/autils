@@ -13,7 +13,7 @@
 %   Options include:
 %    'p'        Poisson noise model
 %    'pg'       Poisson-Gaussian error model
-%    'pgm'      Poisson-Gaussian-multiplicative (PGM) error model
+%    'pgm'      Poisson-Gaussian-multiplicative (PGM) error model (DEFAULT)
 %    'pgm-c'    PGM error model with correlated multiplicative errors
 %    '*-ed'     Add exponential distance covariance information
 %   

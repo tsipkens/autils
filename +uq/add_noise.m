@@ -7,7 +7,7 @@
 %   tau       Multiplicative (shot-to-shot) variance
 %   theta     Amplification / scaling factor
 %   gamma     Gaussian noise level
-%   n_shots   Number of signals to generate
+%   ns        Number of signals to generate
 %   seed      Seed for random number generator
 %   f_pois    Flag whether to sample Poisson noise from a Poisson distribution.
 % 
@@ -41,11 +41,11 @@
 %  AUTHOR: Timothy Sipkens
 
 function [s, L, G, out] = ...
-    add_noise(s_bar, tau, the, gam, N_shots, seed, f_pois)
+    add_noise(s_bar, tau, the, gam, ns, seed, f_pois)
 
 %-- Parse inputs ----------------------------------------%
-if ~exist('N_shots', 'var'); N_shots = []; end
-if isempty(N_shots); N_shots = 1; end  % by default only generate one signal
+if ~exist('ns', 'var'); ns = []; end
+if isempty(ns); ns = 1; end  % by default only generate one signal
 
 if ~exist('seed', 'var'); seed = []; end
 if isempty(seed); seed = 1; end
@@ -60,12 +60,12 @@ N_s = length(s_bar);  % length of each signal
 
 % Setup for random variables
 rng(seed);  % control randomness
-n = randn(1, N_shots);  % standard normal random variable, realizes shot-to-shot error
-n_G = randn(N_s, N_shots);  % standard normal random vector, realizes Gaussian noise
+n = randn(1, ns);  % standard normal random variable, realizes shot-to-shot error
+n_G = randn(N_s, ns);  % standard normal random vector, realizes Gaussian noise
 if f_pois == 1  % sample from Poisson distribution
-    n_P = (poissrnd(s_bar * ones(1, N_shots)) - s_bar) ./ sqrt(s_bar);  % standardized Poisson r.v.
+    n_P = (poissrnd(s_bar * ones(1, ns)) - s_bar) ./ sqrt(s_bar);  % standardized Poisson r.v.
 else  % sample Poisson noise as Gaussian
-    n_P = randn(N_s, N_shots);  % standard normal random vector, realizes Poisson noise
+    n_P = randn(N_s, ns);  % standard normal random vector, realizes Poisson noise
 end
 
 
@@ -81,7 +81,7 @@ end
 % Generate observed signals by adding error terms
 s = s_bar .* (1 + ...  % expected average signal (s_bar)
     tau .* n) + ...  % shot-to-shot error (delta)
-    sqrt(the) .* sqrt(s_bar .* ones(1,N_shots) + tau .* s_bar .* n) .* n_P + ...  % Poisson noise (p)
+    sqrt(the) .* sqrt(s_bar .* ones(1,ns) + tau .* s_bar .* n) .* n_P + ...  % Poisson noise (p)
     gam .* n_G;  % Gaussian noise (g)
 
 
@@ -91,7 +91,7 @@ s = s_bar .* (1 + ...  % expected average signal (s_bar)
 % Realized, standard deviation, average, and single shot.
 out.s_std = std(s,[],2);  % standard deviation over the signals at each time
 out.s_ave = mean(s,2);  % average of the signals at each time
-out.s_tilde = s_bar * ones(1, N_shots)+...
+out.s_tilde = s_bar * ones(1, ns)+...
     tau .* s_bar * n;  % expected single-shot signal (s_tilda = s_bar + delta)
 
 % Expected variance (not realized).
