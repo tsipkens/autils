@@ -9,11 +9,11 @@ ni = size(Ni, 1);
 n0 = size(Ni, 2);
 
 idx2 = randi(n0, ni, ns);
+idx1 = (1:ni)' * ones(1, ns);
 
-Nis = zeros(ni, ns);
-for ii=1:ni
-    Nis(ii, :) = Ni(ii, idx2(ii, :));
-end
+idx = sub2ind(size(Ni), idx1, idx2);
+
+Nis = Ni(idx);
 
 end
 
