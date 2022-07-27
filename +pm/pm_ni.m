@@ -28,8 +28,8 @@ if exist('G', 'var')
     % Compute Jacobian. 
     J = prop.k .* di .^ prop.zet;  % Jacobian
     if size(G, 1) == (length(di) + 2)  % then mass-mobility uncertainties are incl.
-        J = [J; M ./ prop.rho100; k .* ...
-            nansum((di ./ 100) .^ prop.zet .* Ni .* log(di ./ 100))];
+        J = [J; M ./ prop.rho100; ...
+            k .* nansum((di ./ 100) .^ prop.zet .* Ni .* log(di ./ 100))];
         % J = [J; M ./ prop.k; prop.k .* ...
         %   nansum(di .^ prop.zet .* Ni .* log(di))];  % pre-factor variant
     end

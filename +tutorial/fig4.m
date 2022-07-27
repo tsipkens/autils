@@ -24,7 +24,7 @@ p = normpdf(log(d), log(dg), log(sg)) .* dd;  % noiseless particle size distribu
 [Ni, ~, Gni0] = uq.add_noise(N0 .* p, 0, 1, 0, 20, 10);  % add noise
 %=========================================================================%
 
-
+%== STEP 0 ==%
 % Get expected value/mean.
 Ni_bar = mean(Ni, 2);
 
@@ -47,20 +47,20 @@ set(gca, 'XScale', 'log');
 xlim([min(d), dmax]);
 
 
-
 % Propagate errors via LPU.
-J = ones(size(Ni_bar));  % Jacobian
-Gn = J' * Gni * J;       % LPU
+J = ones(size(Ni_bar));  % STEP 2: Jacobian
+Gn = J' * Gni * J;       % STEP 3: LPU matrix multiplication
 rel = sqrt(Gn) ./ N0     % relative error
+
 
 % Propagate errors via Monte Carlo.
 Nis = mvnrnd(Ni_bar, Gni, 1e4)';  % sample number concentrations for each size bin
 Ns = sum(Nis);  % samples of QoI
 
+
 % Propagate errors via Monte Carlo, using a resampling method.
 Nirs = uq.resample(Nis(:, 1:10), 1e4);  % resample using first few noisy signals
 Nrs = sum(Nirs);  % samples of QoI
-
 
 
 %-- FIG: Plot of uncertainties in N --%

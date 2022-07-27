@@ -1,5 +1,5 @@
 
-% A script to generate Fig. 6 of Sipkens et al.
+% A script to generate Fig. 6 and 7 of Sipkens et al.
 
 clear;
 close all;
@@ -97,7 +97,7 @@ tbl = table([M_ni, M_hcs, M_hcs_ind, M_hcl, M_mcni, M_mch]' ./ M0(1), ...
 
 
 % Compare NI and MC(MI).
-figure(4);
+figure(6);
 [hy, hx] = histcounts(M_smpl ./ M0(1));
 [hyh] = histcounts(M_smplh ./ M0(1), hx);
 vec = linspace(0, max(hx), 1e3);
@@ -121,7 +121,7 @@ xlim([0.7, 1.3]);
 
 
 % Plot of scaled Jacobian for Ntot, NI, and HCS.
-figure(1);
+figure(7);
 plot(d, ones(size(p1)) ./ N);
 hold on;
 plot(d, J_ni(1:end-2) ./ M0(1));
