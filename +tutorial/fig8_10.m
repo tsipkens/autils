@@ -120,9 +120,11 @@ ylabel('se(N_1)/N_1');
 xlabel('se(N_2)/N_2');
 
 
+%%
+%== FIG 5 ==%
 % Plot mapping Nup to penetration.
-n1 = ceil(size(smpl,1)/2);
-n2 = ceil(size(smpl,2)/2);
+n1 = ceil(size(smpl,1)/2);  % 10
+n2 = ceil(size(smpl,2)/2);  % 2
 l = length(smpl{n1,n2}(1,:));
 [y, idx] = sort(smpl{n1,n2}(1,:) ./ mean(smpl{n1,n2}(1,:)));
 
@@ -147,7 +149,7 @@ ylim([0, 2.2]);
 
 % Plot left panel.
 subplot(1,5,1);
-[yh,xh] = histcounts(smpl{end,end}(1,:) ./ mean(smpl{end,end}(1,:)));
+[yh,xh] = histcounts(smpl{n1,n2}(1,:) ./ mean(smpl{n1,n2}(1,:)));
 stairs([yh,0], xh, 'k');
 set(gca, 'XDir', 'reverse','xtick',[]);
 ylim([0, 2.2]);
