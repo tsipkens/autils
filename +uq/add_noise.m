@@ -2,20 +2,27 @@
 % ADD_NOISE  Simulates signal with Poisson, Gaussian, and multiplicative errors. 
 %  This considers multiple sources of noise: 
 %  
-%  INPUTS:
-%   s_bar     Expected mean signal
-%   tau       Multiplicative (shot-to-shot) variance
-%   theta     Amplification / scaling factor
-%   gamma     Gaussian noise level
-%   ns        Number of signals to generate
-%   seed      Seed for random number generator
-%   f_pois    Flag whether to sample Poisson noise from a Poisson distribution.
-% 
-%  OUTPUTS:
-%   s         Set of corrupted signals, with error added
-%   Ls        Matrix square root of inverse covariance
-%   Gs        Data covariance matrix assocaited with an output
-%   out.s_ave     Average of observed signals at each time
+%  S = uq.add_noise(S_BAR, TAU, THE, GAM) generates a noisy signal about
+%  the provided mean signal, S_BAR, with contributions from multiplicative
+%  (TAU), Poisson (THE), and Gaussian (GAM) error modes. To ignore an error
+%  mode, set the corresponding parameter (TAU, THE, and GAM) to zero.
+%  
+%  S = uq.add_noise(..., NS) adds an option to specify the number of noisy
+%  signals, NS. By default, NS = 1 and a single signal is produced. 
+%  
+%  S = uq.add_noise(..., NS, SEED) adds a seed for the random number
+%  generator. 
+%  
+%  S = uq.add_noise(..., NS, SEED, F_POIS) adds a flag for using a Poisson
+%  distribution for the Poisson noise. 
+%  
+%  [S, L, G] = uq.add_noise(...) adds outputs for the data covariance,
+%  G, associated with the simulated signals and its Cholesky factorization,
+%  L. 
+%  
+%  [S, L, G, OUT] = uq.add_noise(...) adds a structure containing other
+%  outputs, including:
+%   OUT.s_ave     Average of observed signals at each time
 %       s_std	  Standard deviation of observed signals at each time
 %       s_tilda	  Set of single-shot signals (with shot-to-shot error)
 %  
