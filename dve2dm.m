@@ -11,6 +11,10 @@
 
 function dm = dve2dm(dve, prop)
 
+if ~isfield(prop, 'rhom')
+    error('The dve2dm function requires prop.rhom.');
+end
+
 dm = ((prop.rhom * pi / (6 * prop.k)) .* dve .^ 3) .^ (1 / prop.zet) .* 1e-9;
 
 end
