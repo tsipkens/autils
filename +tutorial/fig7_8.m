@@ -63,7 +63,7 @@ for jj=1:n2
     for ii=1:n1
         [~, ~, smpl, ps] = uq.mc([N1, N2], ...
             [s1(ii) * N1, s2(jj) * N2], ...
-            @(x) x(2,:) ./ x(1,:), 1e4, randi(1e5));
+            @(x) x(2,:) ./ x(1,:), 4e4, randi(1e5));
         
         ps2 = ps;
         ps2(any(smpl < eps)) = []; % remove negative number concentrations
