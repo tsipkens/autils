@@ -6,8 +6,8 @@
 
 function [y, s, smpl, f_smpl] = mc(x, Gx, f, n, seed, f_neg)
 
-if ~exist('f_neg', 'var'); f_neg = 1; end
-if isempty(f_neg); f_neg = 1; end
+if ~exist('f_neg', 'var'); f_neg = []; end
+if isempty(f_neg); f_neg = 0; end
 
 if ~exist('seed', 'var'); seed = []; end
 if isempty(seed); seed = randi(1e5); end
