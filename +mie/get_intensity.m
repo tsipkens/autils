@@ -43,8 +43,8 @@ for ii=1:size(d, 1)  % loop over wavelength and diameter
     end
 end
 
-sl = squeeze(real(s1) .^ 2 + imag(s1) .^ 2);  % perpindicular
-sr = squeeze(real(s2) .^ 2 + imag(s2) .^ 2);  % parallel
+sl = squeeze(abs(s1) .^ 2); % real(s1) .^ 2 + imag(s1) .^ 2);  % perpindicular
+sr = squeeze(abs(s2) .^ 2); % real(s2) .^ 2 + imag(s2) .^ 2);  % parallel
 sn = (sr + sl) ./ 2;  % natural
 
 end
