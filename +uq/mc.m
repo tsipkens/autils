@@ -1,12 +1,16 @@
 
 % MC  Monte Carlo method.
+%  F_NEG determines if non-negativity is enforced for the samples.
 %  
 %  AUTHOR: Timothy Sipkens, 2022-02-10
 
-function [y, s, smpl, f_smpl] = mc(x, Gx, f, n, seed)
+function [y, s, smpl, f_smpl] = mc(x, Gx, f, n, seed, f_neg)
+
+if ~exist('f_neg', 'var'); f_neg = []; end
+if isempty(f_neg); f_neg = 0; end
 
 if ~exist('seed', 'var'); seed = []; end
-if isempty(seed); seed = randi(1); end
+if isempty(seed); seed = randi(1e5); end
 rng(seed);  % reset number generator with seed
 
 % If vector of variances supplied.
@@ -16,6 +20,7 @@ end
 
 
 smpl = mvnrnd(x, Gx, n)';
+if f_neg; smpl(:, any(smpl < 0)) = []; end
 
 f_smpl = f(smpl);
 y = mean(f_smpl, 2);

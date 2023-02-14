@@ -5,7 +5,12 @@
 clear;
 clc;
 
-prop = massmob.init('universal')
+prop = massmob.init('universal');
+prop.rhom = 1800;
+prop.dp100 = 17.8e-9;
+Dalp = 1.1;
+prop.Dtem = (2 * Dalp - prop.Dm) / (2 * Dalp - 3);
+prop
 
 massmob.add(prop, 'zet', prop.zet, 'rho100', prop.rho100 * 2)
 massmob.update(prop, 'zet', 2.4)
@@ -13,11 +18,38 @@ massmob.update(prop, 'zet', 2.4)
 dg = 100;
 sg = 1.5;
 
-da = dm2da(dg * 1e-9, 2160) * 1e9
-dm = da2dm(da * 1e-9, 2160) * 1e9
 
-mp = dm2mp(dg * 1e-9, prop) * 1e18
-dm = mp2dm(mp * 1e-18, prop) * 1e9
+%-- Check pairs of functions.---------------------------------%
+quant = {'mp', 'dm', 'dve', 'da', 'chi', 'rhoeff'};
+
+t0 = repmat({repmat('    ', [length(quant), 1])}, [1, length(quant)]);
+f = table(t0{:});
+f.Properties.RowNames = quant;
+f.Properties.VariableNames = quant;
+for ii=1:length(quant)
+    for jj=(ii+1):length(quant)
+
+        fun_1 = [quant{ii}, '2', quant{jj}];
+        fun_2 = [quant{jj}, '2', quant{ii}];
+        if and(exist(fun_1, 'file'), exist(fun_2, 'file'))
+            a = eval([fun_1, '(dg * 1e-9, prop) .* 1e9']);
+            b = eval([fun_2, '(a * 1e-9, prop)']);
+            if (b - dg) < 0.1; f{ii,jj} = 'Y   ';
+            else; f{ii,jj} = 'F   ';
+            end
+        elseif or(exist(fun_1, 'file'), exist(fun_2, 'file'))
+            f{ii,jj} = '1/2 ';
+        else
+            f{ii,jj} = '-   ';
+        end
+    end
+end
+f
+%------------------------------------------------------------%
+
+
+dm = dg;
+mp = dm2mp(dm .* 1e-9, prop) * 1e18
 
 [B, Zp] = dm2zp(dm, 1)
 
@@ -46,5 +78,7 @@ mpfe_ni = pfe.mpfe_ni(p, (1 - pfe0) .* p, d, prop)
 mpfe_hc = pfe.mpfe_hc(p, (1 - pfe0) .* p, d, prop)
 scapfe_hc = pfe.scapfe_ni(p, (1 - pfe0) .* p, ones(size(p)))
 
+
+tbl = working.dm2tbl(dg .* 1e-9, prop)
 
 

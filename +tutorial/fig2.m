@@ -1,5 +1,5 @@
 
-% A script demonstrating error models.
+% A script demonstrating mean-variance fitting.
 %  
 %  AUTHOR: Timothy Sipkens: 2022-04-19
 
@@ -8,7 +8,7 @@ close all;
 clc;
 
 % Load mu and sig from real SMPS signal.
-load('data/smps1.mat');
+load('+tutorial/data/smps1.mat');
 
 [~, tau, the, gam] = uq.covp(mu1, 'pgm', sig1);
 

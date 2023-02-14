@@ -8,19 +8,18 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2022-07-13
 
-function sa = sdm2sda(sd, d, prop, chi, f_aero)
+function sa = sdm2sda(sd, d, prop, f_iter)
 
-if ~exist('f_aero', 'var'); f_aero = []; end
-if isempty(f_aero); f_aero = 0; end
+if ~exist('f_iter', 'var'); f_iter = []; end
+if isempty(f_iter); f_iter = 0; end
 
 % Perturb to estimate new GSD.
 d1 = exp(log(d) .* 1.01);
 d2 = exp(log(d) .* 0.99);
 sa = exp( ...
-    (log(dm2da(d1, dm2rhoeff(d1, prop), chi, f_aero)) - ...
-     log(dm2da(d2, dm2rhoeff(d2, prop), chi, f_aero))) ./ ...
+    (log(dm2da(d1, prop, f_iter)) - ...
+     log(dm2da(d2, prop, f_iter))) ./ ...
     (0.02 .* log(d)) .* ...
     log(sd));  % aerodynamic diameter, count distribution GSD
 
 end
-

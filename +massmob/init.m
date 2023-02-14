@@ -18,16 +18,19 @@
 %  STR = 'rhod' or STR = 'md', which corresponds to effective density or
 %  mass at a diameter of D.
 %  
+%  PROP = massmob.init(..., D, RHOM) adds an input for the material
+%  density.
+%  
 %  ------------------------------------------------------------------------
 %  
 %  AUTHOR: Timothy Sipkens, 2021-03-25
 
-function prop = init(prop_str1, val1, str2, val2, d)
+function prop = init(prop_str1, val1, str2, val2, d, rhom)
 
 if ~exist('d', 'var'); d = []; end
 if isempty(d); d = 100; end
 
-% Check for presents.
+% Check for presets.
 if ischar(prop_str1)
     switch prop_str1
         case {'NaCl', 'salt'}  % assume spheres with bulk density
@@ -36,9 +39,11 @@ if ischar(prop_str1)
         case {'universal', 'soot'}  % universal soot relation (Olfert and Rogak)
             prop_str1 = 'zet';  val1 = 2.48;
             str2 = 'rho100';    val2 = 510;
+            rhom = 1860;  % added at the bottom of this function
         case 'water'  % water spheres
             prop_str1 = 'zet';  val1 = 3;
             str2 = 'rho100';    val2 = 1000;
+            rhom = 1000;  % added at the bottom of this function
     end
 end
 
@@ -55,7 +60,7 @@ else
     prop = prop_str1;
 end
 
-% Check afor mass-mobility exponent information.
+% Check for mass-mobility exponent information.
 if and(~isfield(prop, 'zet'), ~isfield(prop, 'Dm'))
     error('Mass-mobility exponent is required for mass-mobility relation.')
 elseif ~isfield(prop, 'zet')
@@ -64,7 +69,8 @@ else
     prop.Dm = prop.zet;  % for backwards compatibility
 end
 
-% Comptue properties. 
+%-- BUILD STRUCTURE ------------------------------------------------------%
+% Compute properties. 
 if ~isfield(prop, 'm0')
     if isfield(prop, 'm100')
         prop.m0 = prop.m100 * (1 / 100) ^ prop.zet;
@@ -99,6 +105,11 @@ if d ~= 100
     prop.d = d;
     prop.md = prop.m0 / (1 / (d * 1e9)) ^ prop.zet;
     prop.rhod = prop.md * 6 / pi / (d ^ 3);
+end
+
+% Check for rhom (material density) from parsing preset and add.
+if exist('rhom', 'var')
+    prop.rhom = rhom;
 end
 
 end

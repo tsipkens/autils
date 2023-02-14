@@ -10,33 +10,31 @@ dg = 75;
 sg = 1.86; %65;
 % sg = 1.8;
 
-chi = 1.0;
-
 prop = massmob.init('salt');
-rho = prop.rho100;
-
-prop.chi = chi;
-
+prop.rhom = 2160;
+% Differs from web app based on mass-mobility parameters.
 
 
 n = 2e3;
 d = logspace(log10(10), log10(2e3), n);
 
-f_aero = 0;
+f_iter = 1;
 
 cmd = dg
-[cmad, cmvd] = dm2da(cmd .* 1e-9, dm2rhoeff(cmd .* 1e-9, prop), chi, f_aero);
+cmad = dm2da(cmd .* 1e-9, prop, f_iter);
+cmvd = dm2dve(cmd .* 1e-9, prop);
 cmad = cmad .* 1e9
 cmvd = cmvd .* 1e9
 
 mmd = hc(dg, sg, 3)
 smd = hc(dg, sg, 6)
-[mmad, mmvd] = dm2da(mmd .* 1e-9, dm2rhoeff(mmd .* 1e-9, prop), chi, f_aero);
+mmad = dm2da(mmd .* 1e-9, prop, f_iter);
+mmvd = dm2dve(mmd .* 1e-9, prop);
 
-da = dm2da(d .* 1e-9, dm2rhoeff(d .* 1e-9, prop), chi, f_aero) .* 1e9;
+da = dm2da(d .* 1e-9, prop, f_iter) .* 1e9;
 
 
-sga = sdm2sda(sg, dg * 1e-9, prop, chi, f_aero)  % aerodynamic diameter, count distribution GSD
+sga = sdm2sda(sg, dg * 1e-9, prop, f_iter)  % aerodynamic diameter, count distribution GSD
 
 mmad = mmad .* 1e9
 mmvd = mmvd .* 1e9
@@ -105,7 +103,7 @@ set(gca, 'XScale', 'log');
 % Figure used for translating log-scales.
 figure(2);
 d2 = [10:10:100, 200:100:1000, 2000:1000:4000];
-da2 = dm2da(d2 .* 1e-9, rho, chi, f_aero) .* 1e9;
+da2 = dm2da(d2 .* 1e-9, prop, f_iter) .* 1e9;
 loglog(d2, da2, '.');
 hold on;
 loglog(mmd, mmad, 'r.');
