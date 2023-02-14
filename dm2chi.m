@@ -3,7 +3,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2022-07-13
 
-function chi = dm2chi(dm, prop, f_iter)
+function chi = dm2chi(dm, prop, f_iter, varargin)
 
 %-- Parse inputs --------------------------%
 if ~exist('f_iter', 'var'); f_iter = []; end
@@ -18,7 +18,7 @@ dve = dm2dve(dm, prop);
 
 chi = dm ./ dve;
 if f_iter
-    chi = chi ./ Cc(dm) .* Cc(dve);
+    chi = chi ./ Cc(dm, varargin{:}) .* Cc(dve, varargin{:});
 end
 
 %{
