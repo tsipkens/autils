@@ -1,5 +1,5 @@
 
-% SDM2SDA  Calculate the GSD for aerodynamic distribution from mobility distribution GSD.
+% SDM2SDA  Calculate the GSD for the aerodynamic distribution from mobility distribution GSD.
 %  
 %  SM = sdm2sda(SD,PROP) converts the GSD using the mass-mobility
 %  relation parameters in PROP (specifically PROP.zet). 
