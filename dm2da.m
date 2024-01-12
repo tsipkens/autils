@@ -18,7 +18,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2019-01-02
 
-function [da, dve0] = dm2da(dm, prop, f_iter, varargin)
+function da = dm2da(dm, prop, f_iter, varargin)
 
 %-- Parse inputs --------------------------%
 if ~exist('f_iter', 'var'); f_iter = []; end
@@ -29,16 +29,16 @@ rho0 = 1e3;  % density of water
 
 % Compute simple volume-equivalent and aerodynamic diameters, 
 % that is without iteration. 
-rho = dm2rhoeff(dm, prop);  % effective density
-da = dm .* sqrt(rho ./ rho0);  % aerodynamic diameter (simple)
+rhoeff = dm2rhoeff(dm, prop);  % effective density
+da = dm .* sqrt(rhoeff ./ rho0);  % aerodynamic diameter (simple)
 
 %-{
 % Alternate, iterative method that is more precise.
 opts = optimset('Display', 'off');
 if f_iter
     % Solve for aerodynamic diameter.
-    fun = @(da) 1e9 .* (dm .* sqrt(rho ./ rho0 .* ...
-        Cc(dm, varargin{:}) ./ Cc(da, varargin{:})) - da);
+    fun = @(da1) 1e9 .* ...
+        (da .* sqrt(Cc(dm, varargin{:}) ./ Cc(da1, varargin{:})) - da1);
     da = fsolve(fun, da, opts);
 end
 %}
