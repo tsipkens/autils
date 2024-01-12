@@ -2,7 +2,9 @@
 
 (***A***erosol ***Util***itie***s***)
 
-A set of utilities for computing and comparing aerosol properties. This code is still under construction and could change at any time.
+A set of utilities for computing and comparing aerosol properties. 
+
+For tutorial files and UQ tools, see the **tutorial** branch. The main branch has been streamlined for addition as a submodule in other code bases. 
 
 A JavaScript/web-enabled version of some of this code is available at [tsipkens/autils-web](https://github.com/tsipkens/autils-web), which was deployed as a web app at [tsipkens.github.io/autils-web](https://tsipkens.github.io/autils-web/). 
 
