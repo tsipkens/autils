@@ -1,5 +1,5 @@
 
-% SDM2SMP  Calculate the GSD for the particle mass distribution from mobility distribution GSD.
+% SMP2SDM  Calculate the GSD for the mobility distribution from particle mass distribution GSD.
 %  
 %  SM = sdm2smp(SD,PROP) converts the GSD using the mass-mobility
 %  relation parameters in PROP (specifically PROP.zet). 
@@ -11,7 +11,7 @@
 %  
 %  AUTHOR: Timothy Sipkens, 2019-01-02
 
-function sm = sdm2smp(sd, prop)
+function sd = smp2sdm(sm, prop)
 
 % Parse inputs.
 if isfloat(prop)
@@ -24,7 +24,7 @@ else
 end
 
 % Use the mass-mobility relationship to get the new GSD.
-sm = exp(log(sd) .* zet);
+sd = exp(log(sm) ./ zet);
 
 end
 

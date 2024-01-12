@@ -7,7 +7,7 @@ clc;
 
 
 dg = 75;
-sg = 1.86; %65;
+sg = 1.4; %65;
 % sg = 1.8;
 
 prop = massmob.init('salt');
@@ -46,15 +46,18 @@ x = normpdf(log(d), log(cmd), log(sg)) .* (sqrt(2*pi) * log(sg));
 xm = normpdf(log(d), log(mmd), log(sg)) .* (sqrt(2*pi) * log(sg));
 xs = normpdf(log(d), log(smd), log(sg)) .* (sqrt(2*pi) * log(sg));
 
+prop.m = 1.5442 + 0j;
+prop.lam = 532e-9;
+
 % Total scattering.
-Qsca = mie.get_eff(532e-9, d' .* 1e-9, 1.5442 + 0j)';
+Qsca = mie.get_eff(prop.lam, d' .* 1e-9, prop.m)';
 Csca1 = Qsca .* (pi .* d .^ 2 ./ 4);
 
 % 45 degree scattering.
-Csca0 = mie.get_intensity(532e-9, d' .* 1e-9, 1.5442 + 0j, [], 45/180*pi)';
+Csca0 = mie.get_intensity(prop.lam, d' .* 1e-9, prop.m, [], 45/180*pi)';
 
 % 40-50 degree scattering.
-Csca2 = mie.get_intensity(532e-9, d' .* 1e-9, 1.5442 + 0j, [], ...
+Csca2 = mie.get_intensity(prop.lam, d' .* 1e-9, prop.m, [], ...
     linspace(30, 60, 25)./180.*pi)';
 Csca2 = mean(Csca2);
 
@@ -77,26 +80,7 @@ set(gca, 'XScale', 'log', 'YScale', 'log');
 
 
 figure(1);
-plot(d, x);
-hold on;
-plot(d, xm);
-plot(d, xs);
-plot(d, xs0);
-plot(d, xs1);
-plot(d, xs2);
-
-xline(cmd);
-xline(mmd);
-xline(smd);
-
-xline(exp(log(cmd) + log(sg)), 'g');
-xline(exp(log(cmd) - log(sg)), 'g');
-
-xline(cmad, 'r');
-xline(mmad, 'r');
-hold off;
-
-set(gca, 'XScale', 'log');
+utils.plot_distributions(cmd, sg, prop, Csca0);
 
 
 %-{
