@@ -49,9 +49,8 @@ dm0 = 1 ./ (3 * pi * mu .* B); % initialize mechanical mobility
 dm0 = dm0 .* Cc_fun(dm0);
 
 opts = optimset('Display', 'off');
-dm = fsolve(@(dm) ...
-    1e9 .* (B - Cc_fun(abs(dm)) ./ (3 * pi * mu .* abs(dm))), dm0, opts);
-dm = abs(dm);
+dm = fminsearch(@(dm) ...
+    1e9 .* norm(B - Cc_fun(abs(dm)) ./ (3 * pi * mu .* abs(dm))), dm0, opts);
 %-------------------------------------------------------------------------%
 
 end
