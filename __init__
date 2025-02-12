@@ -1,0 +1,7 @@
+
+__version__ = '1.0.0'
+__author__ = 'Timothy Sipkens'
+
+from . import autils
+from . import tfer
+from . import props
