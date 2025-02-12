@@ -1,2 +1,3 @@
 # py-autils
- Aerosol characterization analysis utilities in Python. 
+
+ Analysis utilities for aerosol characterization and property conversion. 
