@@ -51,6 +51,12 @@ def massmob_init(prop_str1=None, val1=None, str2=None, val2=None, d=100, rhom=No
             str2 = 'rho100'
             val2 = 1000
             rhom = 1000  # added at the bottom
+        elif prop_str1 == 'santovac':  # water spheres
+            prop_str1 = 'zet'
+            val1 = 3
+            str2 = 'rho100'
+            val2 = 1198
+            rhom = 1198  # added at the bottom
 
     # Copy inputs to structure
     if isinstance(prop_str1, str):
