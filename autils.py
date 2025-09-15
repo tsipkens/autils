@@ -32,26 +32,30 @@ def massmob_init(prop_str1=None, val1=None, str2=None, val2=None, d=100, rhom=No
     AUTHOR: Timothy Sipkens, 2021-03-25
     """
     
-    # Check for presets
+    # Check for presets.
     if isinstance(prop_str1, str):
-        if prop_str1 in ['NaCl', 'salt']:  # assume spheres with bulk density
+        name = prop_str1
+        if name in ['NaCl', 'salt']:  # assume spheres with bulk density
             prop_str1 = 'zet'
             val1 = 3
             str2 = 'rho100'
             val2 = 2160
-        elif prop_str1 in ['universal', 'soot']:  # universal soot relation (Olfert and Rogak)
+
+        elif name in ['universal', 'soot']:  # universal soot relation (Olfert and Rogak)
             prop_str1 = 'zet'
             val1 = 2.48
             str2 = 'rho100'
             val2 = 510
             rhom = 1860  # added at the bottom
-        elif prop_str1 == 'water':  # water spheres
+
+        elif name == 'water':  # water spheres
             prop_str1 = 'zet'
             val1 = 3
             str2 = 'rho100'
             val2 = 1000
             rhom = 1000  # added at the bottom
-        elif prop_str1 == 'santovac':  # water spheres
+
+        elif name == 'santovac':  # water spheres
             prop_str1 = 'zet'
             val1 = 3
             str2 = 'rho100'
@@ -109,6 +113,12 @@ def massmob_init(prop_str1=None, val1=None, str2=None, val2=None, d=100, rhom=No
     # Check for rhom (material density) from parsing preset and add
     if rhom is not None:
         prop['rhom'] = rhom
+
+    # Add primary particle information, if relevant. 
+    if isinstance(name, str):
+        if name in ['universal', 'soot']:  # universal soot relation (Olfert and Rogak)
+            prop['dp100'] = 17.8
+            prop['DTEM'] = 0.35
 
     return prop
 
@@ -518,6 +528,28 @@ def dm2zp(dm, z=1, T=None, p=None):
     Zp = B * e * z
 
     return B, Zp
+
+
+def dm2dpp(d, prop):
+    """
+    Computed primary particle size from a da-dpp relationship, where da = dm.
+    """
+    return prop['dp100'] * (d / 100e-9) ** prop['DTEM']
+
+
+def dm2npp(d, prop):
+    """
+    Computed number of primary particles from mobility diameter and a combiation of
+    (1) the mass-mobility relation and (2) a da-dpp relationship, where da = dm.
+
+    NOTE: Requires that prop contains both the standard mass-mobility parameters as
+    well as a relation for the primary particle size. 
+    """
+
+    N100 = prop['rho100'] / prop['rhom'] * (100 / prop['dp100']) ** 3
+    Npp = N100 * (d / 100e-9) ** (3 * (1 - prop['DTEM']))
+
+    return Npp
 
 
 def dm_da2mp(dm, da, *varargs):
