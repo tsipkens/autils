@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from scipy.optimize import fsolve, minimize, root, least_squares
+from scipy.optimize import fsolve, minimize, least_squares
 from scipy.stats import norm
 
 from autils import props
@@ -534,12 +534,12 @@ def dm2dpp(d, prop):
     """
     Computed primary particle size from a da-dpp relationship, where da = dm.
     """
-    return prop['dp100'] * (d / 100e-9) ** prop['DTEM']
+    return (prop['dp100'] * 1e-9) * (d / 100e-9) ** prop['DTEM']
 
 
 def dm2npp(d, prop):
     """
-    Computed number of primary particles from mobility diameter and a combiation of
+    Computed mobility diameter from the number of primary particles and a combination of
     (1) the mass-mobility relation and (2) a da-dpp relationship, where da = dm.
 
     NOTE: Requires that prop contains both the standard mass-mobility parameters as
@@ -547,9 +547,23 @@ def dm2npp(d, prop):
     """
 
     N100 = prop['rho100'] / prop['rhom'] * (100 / prop['dp100']) ** 3
-    Npp = N100 * (d / 100e-9) ** (3 * (1 - prop['DTEM']))
+    Npp = N100 * (d / 100e-9) ** (prop['zet'] - 3 * prop['DTEM'])
 
     return Npp
+
+
+def npp2dm(Npp, prop):
+    """
+    Computed number of primary particles from mobility diameter and a combination of
+    (1) the mass-mobility relation and (2) a da-dpp relationship, where da = dm.
+
+    NOTE: Requires that prop contains both the standard mass-mobility parameters as
+    well as a relation for the primary particle size. 
+    """
+
+    N100 = prop['rho100'] / prop['rhom'] * (100 / prop['dp100']) ** 3
+
+    return 100e-9 * (Npp / N100) ** (1 / (3 * (1 - prop['DTEM'])))
 
 
 def dm_da2mp(dm, da, *varargs):
