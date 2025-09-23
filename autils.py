@@ -201,8 +201,6 @@ def massmob_init(*args):
             d[args[ii]] = args[ii+1]
     elif len(args) == 1:
         d['name'] = args[0]
-
-    print(d)
     
     return MassMob(**d)
 
@@ -679,6 +677,40 @@ def dm_da2rhoeff(dm, da, *varargs):
     """
     # Compute effective density
     return 1000 * (da / dm)**2 * cc(da, *varargs) / cc(dm, *varargs)
+
+
+def dm_rhoeff2da(dm, rho, f_iter=1, *args):
+    """
+    Convert aerodynamic diameter and effective density to mobility diameter.
+    
+    Parameters:
+        da (float or numpy array): Aerodynamic diameter in meters.
+        rho (float or numpy array): Effective density of same size as da or scalar.
+        f_iter (int, optional): Flag indicating whether to use simple (0) or iterative (1) evaluation. Default is 1 (iterative).
+        *args: Additional arguments passed to the slip correction function Cc if needed.
+
+    Returns:
+        dm (float or numpy array): Mobility diameter in meters.
+    """
+
+    # Density of water in kg/m^3
+    rho0 = 1e3
+
+    # Calculate the mobility diameter directly without iteration (simple method)
+    da = dm * np.sqrt(rho / rho0)
+
+    # Iterative method (more precise)
+    if f_iter:
+        def fun_iter(da):
+            return 1e9 * (dm * np.sqrt(rho / rho0 *
+                           cc(dm, *args) / cc(da * 1e-9, *args)) - da * 1e-9)
+        
+        da = fsolve(fun_iter, da * 1e9) * 1e-9
+
+    # Ensure result is real
+    da = np.real(da)
+
+    return da
 
 
 def dm_mp2da(dm, mp, f_iter=1, *varargs):
