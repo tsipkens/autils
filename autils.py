@@ -343,6 +343,19 @@ def cc(d, T_opt=None, p=None, opt=None):
 
     return Cc
 
+def mu(T=None, p=None):
+    """
+    Return gas viscosity [Pa*s], with two possible calculation methods.
+    """
+    if T is None or p is None:
+        return 1.82e-5  # gas viscosity
+    
+    else:  # constants for Olfert laboratory / Kim et al.
+        S = 110.4  # temperature [K]
+        T_0 = 296.15  # reference temperature [K]
+        vis_23 = 1.83245e-5  # reference viscosity [kg/(m*s)]
+        return vis_23 * ((T / T_0) ** 1.5) * ((T_0 + S) / (T + S))  # gas viscosity
+
 #== Aerodynamic diameter conversions ===========================#
 def da2dm(da, prop, f_iter=1, *args):
     """
@@ -595,16 +608,7 @@ def dm2zp(dm, z=1, T=None, p=None):
     e = 1.6022e-19  # electron charge [C]
 
     # Default gas viscosity for Buckley/Davies
-    if T is None or p is None:
-        mu = 1.82e-5  # gas viscosity [Pa*s]
-        B = cc(dm) / (3 * np.pi * mu * dm)  # mechanical mobility
-    else:
-        # Constants for Olfert laboratory / Kim et al.
-        S = 110.4  # temperature [K]
-        T_0 = 296.15  # reference temperature [K]
-        vis_23 = 1.83245e-5  # reference viscosity [kg/(m*s)]
-        mu = vis_23 * ((T / T_0) ** 1.5) * ((T_0 + S) / (T + S))  # gas viscosity
-        B = cc(dm, T, p) / (3 * np.pi * mu * dm)  # mechanical mobility
+    B = cc(dm,T,p) / (3 * np.pi * mu(T,p) * dm)  # mechanical mobility
 
     # Calculate electromobility
     Zp = B * e * z
@@ -869,7 +873,7 @@ def mp_da2dm(mp, da, f_iter=1, *varargs):
     return dm
 
 
-def mp2zp(m, z, T=None, P=None, prop=None):
+def mp2zp(m, z, T=None, p=None, prop=None):
     """
     Calculate electric mobility from particle mass.
 
@@ -877,7 +881,7 @@ def mp2zp(m, z, T=None, P=None, prop=None):
     m (float or ndarray): Particle mass in kilograms.
     z (int or ndarray): Integer charge state.
     T (float, optional): Temperature in Kelvin.
-    P (float, optional): Pressure in atm.
+    p (float, optional): Pressure in atm.
     prop (dict): Dictionary containing mass-mobility properties with 'm0' and 'zet'.
 
     Returns:
@@ -890,16 +894,13 @@ def mp2zp(m, z, T=None, P=None, prop=None):
     d = mp2dm(m, prop)
 
     # Compute mechanical and electrical mobility
-    if T is None or P is None:
-        B, Zp = dm2zp(d, z)
-    else:
-        B, Zp = dm2zp(d, z, T, P)
+    B, Zp = dm2zp(d, z, T, p)
 
     return B, Zp, d
 
 
 #== Mobility > mobility diameter ================================#
-def zp2dm(Zp, z, T=None, P=None):
+def zp2dm(Zp, z, T=None, p=None):
     """
     Calculate mobility diameter from a vector of mobilities.
     
@@ -910,7 +911,7 @@ def zp2dm(Zp, z, T=None, P=None):
         Integer charge state.
     T : float, optional
         Temperature in Kelvin. If not specified, defaults to using Buckley/Davies method.
-    P : float, optional
+    p : float, optional
         Pressure in atm. If not specified, defaults to using Buckley/Davies method.
         
     Returns:
@@ -922,25 +923,11 @@ def zp2dm(Zp, z, T=None, P=None):
     e = 1.6022e-19  # Electron charge [C]
     B = Zp / (e * z)  # Mechanical mobility
     
-    if T is None or P is None:
-        # If P and T are not specified, use Buckley/Davies method
-        mu = 1.82e-5  # Gas viscosity [Pa*s]
-        Cc_fun = lambda dm: cc(dm)
-    else:
-        # If P and T are specified
-        S = 110.4  # Temperature [K]
-        T_0 = 296.15  # Reference temperature [K]
-        vis_23 = 1.83245e-5  # Reference viscosity [kg/(m*s)]
-        mu = vis_23 * ((T / T_0) ** 1.5) * ((T_0 + S) / (T + S))  # Gas viscosity
-
-        Cc_fun = lambda dm: cc(dm, T, P)
-
-    
-    dm0 = 1 / (3 * np.pi * mu * B)  # Initial estimate
-    dm0 = dm0 * Cc_fun(dm0)
+    dm0 = 1 / (3 * np.pi * mu(T,p) * B)  # Initial estimate
+    dm0 = dm0 * cc(dm0,T,p)
 
     def objective(dm):
-        return 1e9 * np.linalg.norm(B - Cc_fun(np.abs(dm)) / (3 * np.pi * mu * np.abs(dm)))
+        return 1e9 * np.linalg.norm(B - cc(np.abs(dm),T,p) / (3 * np.pi * mu(T,p) * np.abs(dm)))
     
     result = minimize(objective, dm0, method='Nelder-Mead', options={'disp': False})
     
