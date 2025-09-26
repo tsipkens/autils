@@ -271,6 +271,31 @@ def massmob_update(prop, f, v, fc=None):
     return prop
 
 
+def newton(fun, x0, n=3):
+    """
+    Solve for a zero using Newtons method.
+    """
+    n = 3 if n is None else n  # set default
+    h = x0 * 1e-5
+    for _ in range(n):
+        f = fun(x0)
+        h = 1e-12
+        fprime = (fun(x0 + h) - fun(x0)) / h
+        x0 = x0 - f / fprime
+    return x0
+
+def fzero(fun, x0, n=3):
+    """
+    Wrapper to decide which zero solver to use.
+    """
+    if n == 0:
+        return x0  # do not iterate
+    elif n == np.inf:
+        return fsolve(fun, x0)  # then use imported solver to default tolerances
+    else:
+        return newton(fun, x0, n)  # else do fast solve, with limited number of computations
+
+
 #== Slip correction ============================================#
 def cc(d, T_opt=None, p=None, opt=None):
     """
@@ -357,14 +382,14 @@ def mu(T=None, p=None):
         return vis_23 * ((T / T_0) ** 1.5) * ((T_0 + S) / (T + S))  # gas viscosity
 
 #== Aerodynamic diameter conversions ===========================#
-def da2dm(da, prop, f_iter=1, *args):
+def da2dm(da, prop, n=3, *args):
     """
     Convert aerodynamic diameter to mobility diameter.
     
     Parameters:
         da (float or numpy array): Aerodynamic diameter in meters.
         prop (dict): A dictionary containing the particle properties (e.g., density).
-        f_iter (int, optional): Flag indicating whether to use simple (0) or iterative (1) evaluation. Default is 1 (iterative).
+        n (int, optional): Number of iterations (see fzero).
         *args: Additional arguments passed to the slip correction function Cc if needed.
 
     Returns:
@@ -379,29 +404,28 @@ def da2dm(da, prop, f_iter=1, *args):
         return 1e9 * (dm * 1e-9 * np.sqrt(dm2rhoeff(dm * 1e-9, prop) / rho0) - da)
 
     # Solve for mobility diameter without iteration (simple method)
-    dm = fsolve(fun_simple, da * 1e9) * 1e-9
+    dm = fzero(fun_simple, da * 1e9, np.inf) * 1e-9
 
     # Iterative method (more precise)
-    if f_iter:
+    if n > 0:
         def fun_iter(dm):
             return 1e9 * (dm * 1e-9 * np.sqrt(dm2rhoeff(dm * 1e-9, prop) / rho0 *
                            cc(dm * 1e-9, *args) / cc(da, *args)) - da)
-        
-        dm = fsolve(fun_iter, dm * 1e9) * 1e-9
+        dm = fzero(fun_iter, dm * 1e9, n) * 1e-9
 
     # Ensure result is real
     dm = np.real(dm)
 
     return dm
 
-def da_rhoeff2dm(da, rho, f_iter=1, *args):
+def da_rhoeff2dm(da, rho, n=3, *args):
     """
     Convert aerodynamic diameter and effective density to mobility diameter.
     
     Parameters:
         da (float or numpy array): Aerodynamic diameter in meters.
         rho (float or numpy array): Effective density of same size as da or scalar.
-        f_iter (int, optional): Flag indicating whether to use simple (0) or iterative (1) evaluation. Default is 1 (iterative).
+        n (int, optional): Number of iterations (also see fzero).
         *args: Additional arguments passed to the slip correction function Cc if needed.
 
     Returns:
@@ -415,43 +439,43 @@ def da_rhoeff2dm(da, rho, f_iter=1, *args):
     dm = da * np.sqrt(rho0 / rho)
 
     # Iterative method (more precise)
-    if f_iter:
+    if n > 0:
         def fun_iter(dm):
             return 1e9 * (dm * 1e-9 * np.sqrt(rho / rho0 *
                            cc(dm * 1e-9, *args) / cc(da, *args)) - da)
         
-        dm = fsolve(fun_iter, dm * 1e9) * 1e-9
+        dm = fzero(fun_iter, dm * 1e9, n) * 1e-9
 
     # Ensure result is real
     dm = np.real(dm)
 
     return dm
 
-def da2dve(da, prop, f_iter=1):
+def da2dve(da, prop, n=3):
     """
     Convert the aerodynamic diameter to a volume-equivalent diameter.
     
     Parameters:
     da (float or ndarray): Aerodynamic diameter.
     prop (dict): Dictionary containing the material density and other properties.
-    f_iter (int, optional): Flag indicating whether to use the iterative method (default: 1).
+    n (int, optional): Number of iterations (see also fzero).
     
     Returns:
     dve (float or ndarray): Volume-equivalent diameter.
     """
     rho0 = 1e3  # Density of water
     
-    if f_iter:
+    if n > 0:
         # Iterative method
         def fun(dve):
-            return (dve * np.sqrt(prop['rhom'] / rho0 / dve2chi(dve, prop, f_iter) * cc(dve) / cc(da)) - da) * 1e9
+            return (dve * np.sqrt(prop['rhom'] / rho0 / dve2chi(dve, prop, n) * cc(dve) / cc(da)) - da) * 1e9
     else:
         # Simple method
         def fun(dve):
-            return (da / np.sqrt(prop['rhom'] / rho0 / dve2chi(dve, prop, f_iter)) - dve) * 1e9
+            return (da / np.sqrt(prop['rhom'] / rho0 / dve2chi(dve, prop, n)) - dve) * 1e9
     
-    # Solve for dve using fsolve
-    dve = fsolve(fun, da)
+    # Solve for dve iterativekly.
+    dve = fzero(fun, da, n)
     
     return dve
 
@@ -474,14 +498,14 @@ def rhoeff(d, m):
 
 
 #== Mobility diameter conversions ==============================#
-def dm2chi(dm, prop, f_iter=1, *args):
+def dm2chi(dm, prop, n=3, *args):
     """
     Compute the dynamic shape factor at a given mobility diameter.
 
     Parameters:
     dm: Mobility diameter
     prop: Dictionary with properties including 'rhom'
-    f_iter: Flag to determine if iterative method is used (default is iterative method)
+    n (int, optional): Number of iterations (also see fzero).
     *args: Additional arguments for Cc function (if required)
 
     Returns:
@@ -496,26 +520,26 @@ def dm2chi(dm, prop, f_iter=1, *args):
 
     # Initial chi calculation
     chi = dm / dve
-    if f_iter:
+    if n > 0:
         chi = chi / cc(dm, *args) * cc(dve, *args)
 
     # Alternative form (commented in MATLAB code)
     # b = (6 / np.pi * prop['k'] * 1e9 ** prop['zet'] / prop['rhom']) ** (1 / 3)
     # chi = dm ** (1 - prop['zet'] / 3) / b
-    # if f_iter:
+    # if n:
     #     chi = chi / cc(dm) * cc(b * dm ** (prop['zet'] / 3))
 
     return chi
 
 
-def dm2da(dm, prop, f_iter=1, *args):
+def dm2da(dm, prop, n=3, *args):
     """
     Convert the mobility diameter (dm) to an aerodynamic diameter (da).
 
     Parameters:
     dm (float or ndarray): Mobility diameter.
     prop (dict): Dictionary containing properties for conversion.
-    f_iter (int, optional): Flag indicating whether to use simple (0) or iterative (1) evaluation. Default is 1.
+    n (int, optional): Number of iterations (also see fzero).
     args: Additional arguments for the Cunningham slip correction factor (Cc).
 
     Returns:
@@ -528,12 +552,12 @@ def dm2da(dm, prop, f_iter=1, *args):
     da = dm * np.sqrt(rhoeff / rho0)  # simple aerodynamic diameter
 
     # Alternate, iterative method
-    if f_iter:
+    if n > 0:
         def func(da1):
             return 1e9 * (da * np.sqrt(cc(dm, *args) / cc(da1, *args)) - da1)
 
-        # Solve for aerodynamic diameter using fsolve
-        da = fsolve(func, da)
+        # Solve for aerodynamic diameter by finding zero.
+        da = fzero(func, da, n)
 
     return da
 
@@ -553,12 +577,12 @@ def dm2dve(dm, prop):
     return dm * (dm2rhoeff(dm, prop) / prop['rhom']) ** (1/3)
 
 
-def dm2mp(d, prop):
+def dm2mp(dm, prop):
     """
     Computes the effective density from mass and mobility diameter.
     
     Parameters:
-        d: float or array-like
+        dm: float or array-like
             Mobility diameter in meters.
         prop: dict
             Properties containing relevant physical parameters.
@@ -567,13 +591,10 @@ def dm2mp(d, prop):
         m: float or array-like
             Particle mass in kilograms.
     """
-    if not (type(prop) == dict):
-        prop = props.massmob_init(prop)
-
-    return prop['m0'] * (d * 1e9) ** prop['zet']
+    return prop['m0'] * (dm * 1e9) ** prop['zet']
 
 
-def dm2rhoeff(d, prop):
+def dm2rhoeff(dm, prop):
     """
     Get effective density from mobility diameter using mass-mobility relation.
     
@@ -587,7 +608,7 @@ def dm2rhoeff(d, prop):
         rho: float or array-like
             Effective density.
     """
-    return rhoeff(d, dm2mp(d, prop))
+    return rhoeff(dm, dm2mp(dm, prop))
 
 
 def dm2zp(dm, z=1, T=None, p=None):
@@ -602,7 +623,7 @@ def dm2zp(dm, z=1, T=None, p=None):
 
     Returns:
     B (float or ndarray): Mechanical mobility.
-    Zp (float or ndarray): Electromobility.
+    zp (float or ndarray): Electromobility.
     """
     # Define constants
     e = 1.6022e-19  # electron charge [C]
@@ -611,19 +632,19 @@ def dm2zp(dm, z=1, T=None, p=None):
     B = cc(dm,T,p) / (3 * np.pi * mu(T,p) * dm)  # mechanical mobility
 
     # Calculate electromobility
-    Zp = B * e * z
+    zp = B * e * z
 
-    return B, Zp
+    return B, zp
 
 
-def dm2dpp(d, prop):
+def dm2dpp(dm, prop):
     """
     Computed primary particle size from a da-dpp relationship, where da = dm.
     """
-    return (prop['dp100'] * 1e-9) * (d / 100e-9) ** prop['DTEM']
+    return (prop['dp100'] * 1e-9) * (dm / 100e-9) ** prop['DTEM']
 
 
-def dm2npp(d, prop):
+def dm2npp(dm, prop):
     """
     Computed mobility diameter from the number of primary particles and a combination of
     (1) the mass-mobility relation and (2) a da-dpp relationship, where da = dm.
@@ -633,12 +654,12 @@ def dm2npp(d, prop):
     """
 
     N100 = prop['rho100'] / prop['rhom'] * (100 / prop['dp100']) ** 3
-    Npp = N100 * (d / 100e-9) ** (prop['zet'] - 3 * prop['DTEM'])
+    Npp = N100 * (dm / 100e-9) ** (3 * (1 - prop['DTEM']))
 
     return Npp
 
 
-def npp2dm(Npp, prop):
+def npp2dm(npp, prop):
     """
     Computed number of primary particles from mobility diameter and a combination of
     (1) the mass-mobility relation and (2) a da-dpp relationship, where da = dm.
@@ -649,7 +670,7 @@ def npp2dm(Npp, prop):
 
     N100 = prop['rho100'] / prop['rhom'] * (100 / prop['dp100']) ** 3
 
-    return 100e-9 * (Npp / N100) ** (1 / (3 * (1 - prop['DTEM'])))
+    return 100e-9 * (npp / N100) ** (1 / (3 * (1 - prop['DTEM'])))
 
 
 def dm_da2mp(dm, da, *varargs):
@@ -683,14 +704,14 @@ def dm_da2rhoeff(dm, da, *varargs):
     return 1000 * (da / dm)**2 * cc(da, *varargs) / cc(dm, *varargs)
 
 
-def dm_rhoeff2da(dm, rho, f_iter=1, *args):
+def dm_rhoeff2da(dm, rho, n=3, *args):
     """
     Convert aerodynamic diameter and effective density to mobility diameter.
     
     Parameters:
         da (float or numpy array): Aerodynamic diameter in meters.
         rho (float or numpy array): Effective density of same size as da or scalar.
-        f_iter (int, optional): Flag indicating whether to use simple (0) or iterative (1) evaluation. Default is 1 (iterative).
+        n (int, optional): Number of iterations (also see fzero).
         *args: Additional arguments passed to the slip correction function Cc if needed.
 
     Returns:
@@ -704,12 +725,12 @@ def dm_rhoeff2da(dm, rho, f_iter=1, *args):
     da = dm * np.sqrt(rho / rho0)
 
     # Iterative method (more precise)
-    if f_iter:
+    if n > 0:
         def fun_iter(da):
             return 1e9 * (dm * np.sqrt(rho / rho0 *
                            cc(dm, *args) / cc(da * 1e-9, *args)) - da * 1e-9)
         
-        da = fsolve(fun_iter, da * 1e9) * 1e-9
+        da = fzero(fun_iter, da * 1e9, n) * 1e-9
 
     # Ensure result is real
     da = np.real(da)
@@ -717,14 +738,14 @@ def dm_rhoeff2da(dm, rho, f_iter=1, *args):
     return da
 
 
-def dm_mp2da(dm, mp, f_iter=1, *varargs):
+def dm_mp2da(dm, mp, n=3, *varargs):
     """
     Compute aerodynamic diameter from mobility diameter and mass.
 
     Parameters:
     dm (float or ndarray): Mobility diameter in meters.
     mp (float or ndarray): Particle mass in kilograms.
-    f_iter (int, optional): Flag indicating whether to use iterative method.
+    n (int, optional): Number of iterations (also see fzero).
     *varargs: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
@@ -734,26 +755,26 @@ def dm_mp2da(dm, mp, f_iter=1, *varargs):
     # Compute simple volume-equivalent and aerodynamic diameters.
     da = dm**(-1/2) * mp**(1/2) * np.sqrt(6 / (np.pi * 1e3))
 
-    if f_iter:
+    if n > 0:
         # Define the function to solve
         def fun(da1):
             return 1e9 * (da * np.sqrt(cc(dm, *varargs) / cc(da1, *varargs)) - da1)
 
         # Solve for aerodynamic diameter
-        da = fsolve(fun, da)
+        da = fzero(fun, da, n)
 
     return da
 
 
 #== Volume-equivalent diameter conversions =======================#
-def dve2chi(dve, prop, f_iter=1):
+def dve2chi(dve, prop, n=3):
     """
     Compute the dynamic shape factor at a given volume-equivalent diameter (dve).
     
     Parameters:
     dve (float or ndarray): Volume-equivalent diameter.
     prop (dict): Dictionary containing properties like 'rhom'.
-    f_iter (int, optional): Flag indicating whether to use the iterative method (default: 1).
+    n (int, optional): Number of iterations (also see fzero).
     
     Returns:
     chi (float or ndarray): Dynamic shape factor.
@@ -769,20 +790,20 @@ def dve2chi(dve, prop, f_iter=1):
     chi = dm / dve
 
     # If iterative method is requested, refine the calculation
-    if f_iter:
+    if n > 0:
         chi = (dm / dve) * (cc(dve) / cc(dm))
 
     return chi
 
 
-def dve2da(dve, prop, f_iter=1, *varargs):
+def dve2da(dve, prop, n=3, *varargs):
     """
     Convert volume-equivalent diameter to aerodynamic diameter.
 
     Parameters:
     dve (float or ndarray): Volume-equivalent diameter in meters.
     prop (dict): Dictionary containing properties including 'rhom'.
-    f_iter (int, optional): Flag indicating whether to use iterative method.
+    n (int, optional): Number of iterations (also see fzero).
     *varargs: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
@@ -791,17 +812,17 @@ def dve2da(dve, prop, f_iter=1, *varargs):
     rho0 = 1e3  # Density of water in kg/m^3
 
     # Compute simple volume-equivalent and aerodynamic diameters
-    chi = dve2chi(dve, prop, f_iter)
+    chi = dve2chi(dve, prop, n)
     da = dve * np.sqrt(prop['rhom'] / rho0 / chi)
 
-    if f_iter:
+    if n > 0:
         # Define the function to solve
         def fun(da1):
             return 1e9 * (dve * np.sqrt(prop['rhom'] / rho0 / chi * 
                                          cc(dve, *varargs) / cc(da1, *varargs)) - da1)
 
         # Solve for aerodynamic diameter
-        da = fsolve(fun, da)
+        da = fzero(fun, da, n)
 
     return da
 
@@ -828,12 +849,12 @@ def dve2dm(dve, prop):
 
 
 #== Single particle mass conversions =============================#
-def mp2dm(m, prop):
+def mp2dm(mp, prop):
     """
     Calculate mobility diameter from particle mass using mass-mobility relation.
 
     Parameters:
-    m (float or ndarray): Particle mass in kilograms.
+    mp (float or ndarray): Particle mass in kilograms.
     prop (dict): Dictionary containing mass-mobility properties with 'm0' and 'zet'.
 
     Returns:
@@ -843,17 +864,17 @@ def mp2dm(m, prop):
         prop = massmob_init(prop)
 
     # Compute mobility diameter and return
-    return 1e-9 * (m / prop['m0']) ** (1 / prop['zet'])
+    return 1e-9 * (mp / prop['m0']) ** (1 / prop['zet'])
 
 
-def mp_da2dm(mp, da, f_iter=1, *varargs):
+def mp_da2dm(mp, da, n=3, *varargs):
     """
     Compute mobility diameter from particle mass and aerodynamic diameter.
 
     Parameters:
     mp (float or ndarray): Particle mass in kilograms.
     da (float or ndarray): Aerodynamic diameter in meters.
-    f_iter (int, optional): Flag indicating whether to use iterative method.
+    n (int, optional): Number of iterations (also see fzero).
     *varargs: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
@@ -862,50 +883,47 @@ def mp_da2dm(mp, da, f_iter=1, *varargs):
     # Compute simple volume-equivalent and aerodynamic diameters
     dm = da**(-2) * mp * (6 / (np.pi * 1e3))
 
-    if f_iter:
+    if n > 0:
         # Define the function to solve
         def fun(dm1):
             return 1e9 * (dm * (cc(dm1, *varargs) / cc(da, *varargs)) - dm1)
 
         # Solve for mobility diameter
-        dm = fsolve(fun, dm)
+        dm = fzero(fun, dm, n)
 
     return dm
 
 
-def mp2zp(m, z, T=None, p=None, prop=None):
+def mp2zp(mp, prop, z=1, T=None, p=None):
     """
     Calculate electric mobility from particle mass.
 
     Parameters:
-    m (float or ndarray): Particle mass in kilograms.
+    mp (float or ndarray): Particle mass in kilograms.
     z (int or ndarray): Integer charge state.
     T (float, optional): Temperature in Kelvin.
     p (float, optional): Pressure in atm.
     prop (dict): Dictionary containing mass-mobility properties with 'm0' and 'zet'.
 
     Returns:
-    tuple: Mechanical mobility (B), electromobility (Zp), and mobility diameter (d).
+    tuple: Mechanical mobility (B), electromobility (zp), and mobility diameter (d).
     """
-    if prop is None or 'm0' not in prop:
-        raise ValueError("prop must contain 'm0'.")
-
     # Compute mobility diameter
-    d = mp2dm(m, prop)
+    d = mp2dm(mp, prop)
 
     # Compute mechanical and electrical mobility
-    B, Zp = dm2zp(d, z, T, p)
+    B, zp = dm2zp(d, z, T, p)
 
-    return B, Zp, d
+    return B, zp, d
 
 
 #== Mobility > mobility diameter ================================#
-def zp2dm(Zp, z, T=None, p=None):
+def zp2dm(zp, z=1, T=None, p=None):
     """
     Calculate mobility diameter from a vector of mobilities.
     
     Parameters:
-    Zp : array-like
+    zp : array-like
         The electric mobility values.
     z : int
         Integer charge state.
@@ -921,21 +939,21 @@ def zp2dm(Zp, z, T=None, p=None):
         Mechanical mobility.
     """
     e = 1.6022e-19  # Electron charge [C]
-    B = Zp / (e * z)  # Mechanical mobility
+    B = zp / (e * z)  # Mechanical mobility
     
     dm0 = 1 / (3 * np.pi * mu(T,p) * B)  # Initial estimate
     dm0 = dm0 * cc(dm0,T,p)
 
-    def objective(dm):
-        return 1e9 * np.linalg.norm(B - cc(np.abs(dm),T,p) / (3 * np.pi * mu(T,p) * np.abs(dm)))
+    def fun(dm):
+        return B - cc(np.abs(dm),T,p) / (3 * np.pi * mu(T,p) * np.abs(dm))
     
-    result = minimize(objective, dm0, method='Nelder-Mead', options={'disp': False})
+    dm0 = fzero(fun, dm0, n=100)
     
-    return result.x, B
+    return dm0, B
 
 
 #== Distribution manipulation ===================================#
-def sdm2sda(sd, d, prop, f_iter=0):
+def sdm2sda(sd, d, prop, n=3):
     """
     Calculate the GSD for the aerodynamic distribution from mobility distribution GSD.
 
@@ -943,7 +961,7 @@ def sdm2sda(sd, d, prop, f_iter=0):
     sd (float or ndarray): GSD for the mobility distribution.
     d (float or ndarray): Mobility diameter.
     prop (dict): Dictionary containing mass-mobility properties.
-    f_iter (int, optional): Flag for iterative correction (default is 0).
+    n (int, optional): Number of iterations (also see fzero).
 
     Returns:
     float or ndarray: GSD for the aerodynamic distribution.
@@ -951,8 +969,8 @@ def sdm2sda(sd, d, prop, f_iter=0):
     d1 = np.exp(np.log(d) * 1.01)
     d2 = np.exp(np.log(d) * 0.99)
 
-    da1 = dm2da(d1, prop, f_iter)
-    da2 = dm2da(d2, prop, f_iter)
+    da1 = dm2da(d1, prop, n)
+    da2 = dm2da(d2, prop, n)
 
     sa = np.exp(
         (np.log(da1) - np.log(da2)) /
