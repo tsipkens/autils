@@ -1,4 +1,4 @@
-
+import inspect
 import numpy as np
 
 from scipy.optimize import fsolve, minimize, least_squares
@@ -6,9 +6,155 @@ from scipy.stats import norm
 
 from autils import props
 
+from tabulate import tabulate # used to show lists of dictionaries (e.g., for setpoint info)
+
 
 def textdone():
     print('\r' +'\033[32m' + '^ DONE!' + '\033[0m' + '\n')
+
+
+class ComputedProperties:
+    """
+    Generic container for properties. Some properties may be used to compute others.
+    Supports vectorized inputs and dictionary-like access.
+    """
+    def __init__(self, **kwargs):
+        # Copy arguments into a single store dictionary
+        self._store = {k: v for k, v in kwargs.items()}
+
+    def check_lengths(self):
+        """
+        Broadcast all non-None attributes to the same length.
+        """
+        # Collect all non-None attributes except 'prop'
+        not_none = {k: np.atleast_1d(v) for k, v in self._store.items() if v is not None and k != 'prop'}
+        if not not_none:
+            return
+        target_len = max(v.size for v in not_none.values())
+        for k, v in not_none.items():
+            if v.size != target_len:
+                self._store[k] = np.broadcast_to(v, target_len)
+
+    # --- dictionary-like interface ---
+    def __getitem__(self, key):
+        if key in self._store:
+            return np.expand_dims(self._store[key], 1)
+        raise KeyError(f"Key '{key}' not found.")
+
+    def __setitem__(self, key, value):
+        self._store[key] = value
+
+    def __iter__(self):
+        return iter(self._store)
+
+    def __len__(self):
+        return len(self._store)
+
+    # --- display ---
+    def __repr__(self):
+        keys = [k for k, v in self._store.items() if v is not None and k != 'prop']
+        if not keys:
+            return "<Empty Store>"
+        cols = np.vstack([np.atleast_1d(self._store[k]).ravel() for k in keys]).T
+        return tabulate(cols, headers=keys)
+
+    # --- utility to fill values using functions ---
+    def apply_functions(self, funcs):
+        """
+        Iteratively apply dictionary of functions to fill values.
+
+        Parameters
+        ----------
+        values : dict
+            Dictionary of existing values (None if missing).
+        funcs : dict
+            Dictionary of functions keyed by the value they compute.
+        """
+        values = {key: self._store.get(key, None) for key in funcs.keys()}  # get existing values
+
+        changed = True
+        while changed:
+            changed = False
+            for key, f in funcs.items():
+                if values.get(key) is not None:
+                    continue
+                args = inspect.signature(f).parameters.keys()
+                if all(values.get(arg) is not None for arg in args):
+                    values[key] = f(*(values[arg] for arg in args))
+                    changed = True
+
+        # Reassign updated values
+        self._store.update(values)
+
+    # --- convenience ---
+    def as_dict(self):
+        return dict(self._store)
+
+    # --- utilities for unique combinations ---
+    def unique(self, tol=1e-4):
+        """
+        Return the unique combinations of property values across attributes.
+
+        Parameters
+        ----------
+        tol : float
+            Tolerance for considering values equal.
+
+        Returns
+        -------
+        ComputedProperties
+            Instance containing only unique combinations.
+        np.ndarray
+            Index mapping to reconstruct original instance.
+        """
+        keys = [k for k, v in self._store.items() if v is not None and k != 'prop']
+        if not keys:
+            return ComputedProperties(), np.array([], dtype=int)
+
+        cols = np.vstack([np.atleast_1d(self._store[k]).ravel() for k in keys]).T
+
+        # Compute magnitude and quantize for tolerance
+        mags = np.floor(np.log10(np.abs(cols)))
+        factor = 10**(-np.log10(tol) - mags - 1)
+        quantized = np.round(cols * factor) / factor
+
+        # Find unique rows and index mapping
+        unique_rows, idx = np.unique(quantized, axis=0, return_inverse=True)
+        unique_values = {k: unique_rows[:, i] for i, k in enumerate(keys)}
+
+        return ComputedProperties(**unique_values), idx
+
+    def expand(self, idx):
+        """
+        Reconstruct the original ComputedProperties instance
+        from a unique instance and its index mapping.
+
+        Parameters
+        ----------
+        idx : np.ndarray
+            Indices of the unique rows in the original data.
+
+        Returns
+        -------
+        ComputedProperties
+            Reconstructed instance matching the original size.
+        """
+        keys = [k for k, v in self._store.items() if v is not None and k != 'prop']
+        restored = {k: np.atleast_1d(self._store[k])[idx] for k in keys}
+        return ComputedProperties(**restored)
+
+    # --- dynamic attribute access ---
+    def __getattr__(self, name):
+        if name in self._store:
+            return self._store[name]
+        raise AttributeError(f"'ComputedProperties' object has no attribute '{name}'")
+
+    def __setattr__(self, name, value):
+        if name == '_store':
+            super().__setattr__(name, value)
+        else:
+            self._store[name] = value
+
 
 
 class MassMob:
