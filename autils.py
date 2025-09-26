@@ -188,7 +188,7 @@ def massmob_init(*args):
     
     AUTHOR: Timothy Sipkens, 2021-03-25
     """
-
+    
     d = {}  # initialize, then loop through arguments and format
     if isinstance(args[0], dict):
         d = args[0]
@@ -224,6 +224,9 @@ def massmob_add(prop, f1, v1=None, f2=None, v2=None):
     dict: Updated prop dictionary with mass-mobility parameters.
     """
 
+    if isinstance(prop, MassMob):
+        prop = prop._store  # convert to dictionary instead
+
     # Remove the relevant fields to be replaced
     fields = ['zet', 'Dm', 'm0', 'k', 'rho0', 'm100', 'rho100']
     for field in fields:
@@ -231,19 +234,16 @@ def massmob_add(prop, f1, v1=None, f2=None, v2=None):
             del prop[field]
 
     if v1 is None:  # If second argument is string of particle type
-        prop1 = massmob_init(f1)  # Assuming init() is defined elsewhere
-        prop['zet'] = prop1['zet']
-        prop['rho100'] = prop1['rho100']
+        inputs = {'name': f1}
 
     else:  # If name-value pairs are provided
         # Add new values
-        prop[f1] = v1
-        prop[f2] = v2
+        inputs = {f1: v1, f2: v2}
 
-    # Fill out remaining values
-    prop = massmob_init(prop)
-
-    return prop
+    output = MassMob(**inputs)
+    output._store = {**output._store, **prop}
+    
+    return output
 
 
 def massmob_update(prop, f, v, fc=None):
