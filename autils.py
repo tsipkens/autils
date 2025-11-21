@@ -38,11 +38,21 @@ class ComputedProperties:
     # --- dictionary-like interface ---
     def __getitem__(self, key):
         if key in self._store:
-            return np.expand_dims(self._store[key], 1)
+            return self._store[key]
         raise KeyError(f"Key '{key}' not found.")
 
     def __setitem__(self, key, value):
         self._store[key] = value
+
+    def __delitem__(self, key):
+        if isinstance(key, tuple):
+            for k in key:
+                del self._store[k]
+        else:
+            del self._store[key]
+
+    def __contains__(self, key):
+        return all(k in self._store for k in key) if isinstance(key, tuple) else key in self._store
 
     def __iter__(self):
         return iter(self._store)
@@ -157,7 +167,7 @@ class ComputedProperties:
 
 
 
-class MassMob:
+class MassMob(ComputedProperties):
     def __init__(self, name=None, prop={}, **kwargs):
         """
         Initialize a MassMob object with material properties.
@@ -189,7 +199,7 @@ class MassMob:
         - This constructor ensures internal consistency by routing
           assignments through the `store` setter.
         """
-        
+
         # Presets. 
         presets = {
             "NaCl": {"zet": 3, "rho100": 2160},
@@ -200,117 +210,189 @@ class MassMob:
             "santovac": {"zet": 3, "rho100": 1198},
         }
 
-        # Internal storage (always present)
-        self._store = prop  # properties that are not MassMob related
-        
-        # Use setter so consistency check runs
-        self.store = presets.get(name, kwargs)
+        super().__init__(**kwargs)  # use of ComputedProperties class
 
-    # ---- dict-like behavior ----
-    def __getitem__(self, key):
-        # Accept single key or tuple of keys
-        if isinstance(key, tuple):
-            return tuple(self._store[k] for k in key)
-        else:
-            return self._store[key]
-
-    def __setitem__(self, key, value):
-        # Accept single key or tuple of keys
-        if isinstance(key, tuple):
-            if len(key) != len(value):
-                raise ValueError("Number of keys and values must match.")
-            for k, v in zip(key, value):
-                self._store[k] = v
-        else:
-            self._store[key] = value
-        self._check(key)  # always enforce consistency
-
-    def __delitem__(self, key):
-        if isinstance(key, tuple):
-            for k in key:
-                del self._store[k]
-        else:
-            del self._store[key]
-
-    def __contains__(self, key):
-        return all(k in self._store for k in key) if isinstance(key, tuple) else key in self._store
-
-    def __iter__(self):
-        return iter(self._store)
-
-    def __len__(self):
-        return len(self._store)
-
-    # ---- property wrapper ----
-    @property
-    def store(self):
-        # return a shallow copy so callers don't mutate directly
-        return dict(self._store)
-
-    @store.setter
-    def store(self, value: dict):
-        if not isinstance(value, dict):
-            raise TypeError("store must be a dict")
-        # replace internal dict then enforce consistency
-        self._store = dict(value)
+        self._store = presets.get(name, kwargs)
         self._check()
 
-    # ---- string repr ----
+        self._store.update(prop)
+
+    # ---- enforce consistency ----
+    def _check(self):
+        funcs = {
+            'Dm': lambda zet: zet, 
+            'zet': lambda Dm: Dm,
+            'm100': lambda rho100: rho100 * np.pi / 6 * (100e-9) ** 3,
+            'm0': lambda m100, zet: m100 * (1 / 100) ** zet,
+            'rho0': lambda m0: m0 * 6 / np.pi * 1e27,
+            'rho100': lambda m100: m100 * 6 / np.pi / (100e-9) ** 3,
+            'k': lambda m0: m0  # alias
+        }
+        self.apply_functions(funcs)  # apply functions iteratively to fill class
+
+
+    # ---- string repr (override) ----
     def __repr__(self):
-        lines = ["\r\033[32mMassMob:\033[0m"]
+        lines = ["\r\033[32mProperties:\033[0m"]
         for attr, val in self._store.items():
             lines.append(f"  \033[34m{attr}\033[0m → {repr(val)}")
         return "\n".join(lines)
 
-    # ---- enforce consistency ----
-    def _check(self, key=None):
-        """Fill in missing parameters and enforce internal consistency."""
-        p = self._store.copy()
 
-        # Sets of keys. 
-        sets = [["rho100", "k", "m0", "m100"], 
-                ['zet', 'Dm']]
+# class MassMob:
+#     def __init__(self, name=None, prop={}, **kwargs):
+#         """
+#         Initialize a MassMob object with material properties.
 
-        # Handle which information to keep constant.
-        if isinstance(key, tuple):
-            p = {key[0]: p[key[0]], key[1]: p[key[1]]}
-        elif key in sets[0]:
-            p = {"zet": p["zet"], key: p[key]}  # hold zeta constant
-        elif key in sets[1]:
-            p = {"rho100": p["rho100"], "zet": p[key]}  # hold rho100 constant
+#         Parameters
+#         ----------
+#         name : str, optional
+#             Name of a preset material. 
+#             If provided, corresponding default properties are loaded.
+#             If None, only `prop` and `kwargs` are used.
+        
+#         prop : dict, optional
+#             Dictionary of additional properties to store in `self._store`.
+#             Defaults to an empty dict.
 
-        # -- Check for zet / Dm consistency
-        if "zet" not in p and "Dm" not in p:
-            raise ValueError("Mass–mobility exponent (zet or Dm) required.")
-        p["zet"] = p.get("zet", p.get("Dm"))
-        p["Dm"] = p.get("Dm", p.get("zet"))
+#         **kwargs : dict
+#             Arbitrary keyword arguments specifying properties. These
+#             override any values loaded from a preset if `name` is given.
 
-        # -- Ensure m0 exists (base mass parameter)
-        if "m0" not in p:
-            if "m100" in p:  # use 100 nm mass scaling
-                p["m0"] = p["m100"] * (1 / 100) ** p["zet"]
-            elif "md" in p:  # use mass at diameter d
-                d = p.get("d", 100e-9)
-                p["m0"] = p["md"] * (1 / (d * 1e9)) ** p["zet"]
-            elif "rho0" in p:  # use bulk density at 1 nm
-                p["m0"] = p["rho0"] * np.pi / 6 * 1e-27
-            elif "rho100" in p:  # use density at 100 nm
-                p["m100"] = p["rho100"] * np.pi / 6 * (100e-9) ** 3
-                p["m0"] = p["m100"] * (1 / 100) ** p["zet"]
-            elif "rhod" in p:  # use density at diameter d
-                d = p.get("d", 100e-9)
-                p["md"] = p["rhod"] * np.pi / 6 * d**3
-                p["m0"] = p["md"] * (1 / (d * 1e9)) ** p["zet"]
-            else:
-                raise ValueError("Could not compute m0.")
+#         Attributes
+#         ----------
+#         _store : dict
+#             Stores properties passed via `prop`.
 
-        # -- Fill out dependent parameters
-        p["m100"] = p["m0"] / (1 / 100) ** p["zet"]
-        p["rho0"] = p["m0"] * 6 / np.pi * 1e27
-        p["rho100"] = p["m100"] * 6 / np.pi / (100e-9) ** 3
-        p["k"] = p["m0"]  # alias
+#         Notes
+#         -----
+#         - If both a preset `name` and `kwargs` are provided, the
+#           `kwargs` values will override the preset defaults.
+#         - This constructor ensures internal consistency by routing
+#           assignments through the `store` setter.
+#         """
+        
+#         # Presets. 
+#         presets = {
+#             "NaCl": {"zet": 3, "rho100": 2160},
+#             "salt": {"zet": 3, "rho100": 2160},
+#             "universal": {"zet": 2.48, "rho100": 510, "rhom": 1860, "dp100": 17.8, "DTEM": 0.35},
+#             "soot": {"zet": 2.48, "rho100": 510, "rhom": 1860, "dp100": 17.8, "DTEM": 0.35},
+#             "water": {"zet": 3, "rho100": 1000},
+#             "santovac": {"zet": 3, "rho100": 1198},
+#         }
 
-        self._store = p
+#         # Internal storage (always present)
+#         self._store = prop  # properties that are not MassMob related
+        
+#         # Use setter so consistency check runs
+#         self.store = presets.get(name, kwargs)
+
+#     # ---- dict-like behavior ----
+#     def __getitem__(self, key):
+#         # Accept single key or tuple of keys
+#         if isinstance(key, tuple):
+#             return tuple(self._store[k] for k in key)
+#         else:
+#             return self._store[key]
+
+#     def __setitem__(self, key, value):
+#         # Accept single key or tuple of keys
+#         if isinstance(key, tuple):
+#             if len(key) != len(value):
+#                 raise ValueError("Number of keys and values must match.")
+#             for k, v in zip(key, value):
+#                 self._store[k] = v
+#         else:
+#             self._store[key] = value
+#         self._check(key)  # always enforce consistency
+
+#     def __delitem__(self, key):
+#         if isinstance(key, tuple):
+#             for k in key:
+#                 del self._store[k]
+#         else:
+#             del self._store[key]
+
+#     def __contains__(self, key):
+#         return all(k in self._store for k in key) if isinstance(key, tuple) else key in self._store
+
+#     def __iter__(self):
+#         return iter(self._store)
+
+#     def __len__(self):
+#         return len(self._store)
+
+#     # ---- property wrapper ----
+#     @property
+#     def store(self):
+#         # return a shallow copy so callers don't mutate directly
+#         return dict(self._store)
+
+#     @store.setter
+#     def store(self, value: dict):
+#         if not isinstance(value, dict):
+#             raise TypeError("store must be a dict")
+#         # replace internal dict then enforce consistency
+#         self._store = dict(value)
+#         self._check()
+
+#     # ---- string repr ----
+#     def __repr__(self):
+#         lines = ["\r\033[32mMassMob:\033[0m"]
+#         for attr, val in self._store.items():
+#             lines.append(f"  \033[34m{attr}\033[0m → {repr(val)}")
+#         return "\n".join(lines)
+
+#     # ---- enforce consistency ----
+#     def _check(self, key=None):
+#         """Fill in missing parameters and enforce internal consistency."""
+#         p = self._store.copy()
+
+#         # Sets of keys. 
+#         sets = [["rho100", "k", "m0", "m100"], 
+#                 ['zet', 'Dm']]
+
+#         # Handle which information to keep constant.
+#         if isinstance(key, tuple):
+#             p = {key[0]: p[key[0]], key[1]: p[key[1]]}
+#         elif key in sets[0]:
+#             p = {"zet": p["zet"], key: p[key]}  # hold zeta constant
+#         elif key in sets[1]:
+#             p = {"rho100": p["rho100"], "zet": p[key]}  # hold rho100 constant
+
+#         # -- Check for zet / Dm consistency
+#         if "zet" not in p and "Dm" not in p:
+#             raise ValueError("Mass–mobility exponent (zet or Dm) required.")
+#         p["zet"] = p.get("zet", p.get("Dm"))
+#         p["Dm"] = p.get("Dm", p.get("zet"))
+
+#         # -- Ensure m0 exists (base mass parameter)
+#         if "m0" not in p:
+#             if "m100" in p:  # use 100 nm mass scaling
+#                 p["m0"] = p["m100"] * (1 / 100) ** p["zet"]
+#             elif "md" in p:  # use mass at diameter d
+#                 d = p.get("d", 100e-9)
+#                 p["m0"] = p["md"] * (1 / (d * 1e9)) ** p["zet"]
+#             elif "rho0" in p:  # use bulk density at 1 nm
+#                 p["m0"] = p["rho0"] * np.pi / 6 * 1e-27
+#             elif "rho100" in p:  # use density at 100 nm
+#                 p["m100"] = p["rho100"] * np.pi / 6 * (100e-9) ** 3
+#                 p["m0"] = p["m100"] * (1 / 100) ** p["zet"]
+#             elif "rhod" in p:  # use density at diameter d
+#                 d = p.get("d", 100e-9)
+#                 p["md"] = p["rhod"] * np.pi / 6 * d**3
+#                 p["m0"] = p["md"] * (1 / (d * 1e9)) ** p["zet"]
+#             else:
+#                 raise ValueError("Could not compute m0.")
+
+#         # -- Fill out dependent parameters
+#         p["m100"] = p["m0"] / (1 / 100) ** p["zet"]
+#         p["rho0"] = p["m0"] * 6 / np.pi * 1e27
+#         p["rho100"] = p["m100"] * 6 / np.pi / (100e-9) ** 3
+#         p["k"] = p["m0"]  # alias
+
+#         self._store = p
 
 
 #== Functions for mass-mobility relations ======================#
