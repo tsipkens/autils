@@ -1,6 +1,7 @@
 import inspect
-import numpy as np
+from collections import UserDict
 
+import numpy as np
 from scipy.optimize import fsolve, minimize, least_squares
 from scipy.stats import norm
 
@@ -13,93 +14,106 @@ def textdone():
     print('\r' +'\033[32m' + '^ DONE!' + '\033[0m' + '\n')
 
 
-class ComputedProperties:
+import numpy as np
+from collections import UserDict
+import inspect
+from tabulate import tabulate  # Assuming this library is available for __repr__
+
+class ComputedProperties(UserDict):
     """
-    Generic container for properties. Some properties may be used to compute others.
-    Supports vectorized inputs and dictionary-like access.
+    Generic container for properties. Subclasses collections.UserDict.
+    
+    - Data is stored in the self.data attribute (inherited from UserDict).
+    - Supports vectorized inputs and dictionary-like/attribute access.
     """
+    
     def __init__(self, **kwargs):
-        # Copy arguments into a single store dictionary
-        self._store = {k: v for k, v in kwargs.items()}
+        # UserDict.__init__ initializes self.data = {}
+        super().__init__()
+        
+        # Store properties directly in self.data (UserDict's internal dict)
+        # This replaces the need for self._store
+        self.data.update(kwargs)
+        
+        # 'toignore' must be stored as a regular attribute, not in self.data, 
+        # so it doesn't get treated as a property.
+        self.toignore = ['toignore']  
+        
+        # NOTE: We remove the manual __getitem__, __setitem__, __delitem__, 
+        # __len__, __iter__, and __contains__ methods, as they are now 
+        # correctly inherited and implemented by UserDict, operating on self.data.
+
+    # --- Attribute Access (Simplified) ---
+    # We must keep this custom __setattr__ to ensure new attributes are 
+    # stored as properties in self.data, not as normal instance attributes.
+    def __setattr__(self, name, value):
+        # Allow setting of internal UserDict attributes and specific instance attributes
+        if name in ('data', 'toignore'):
+            super().__setattr__(name, value)
+        # Treat all other assignments as property updates (i.e., put them in self.data)
+        else:
+            self.data[name] = value
+
+    # We must keep this custom __getattr__ to allow attribute access (e.g., props.rc)
+    # to retrieve items from the dictionary (self.data).
+    def __getattr__(self, name):
+        if name in self.data:
+            return self.data[name]
+        # This will raise AttributeError if the key isn't found in self.data
+        raise AttributeError(f"'ComputedProperties' object has no attribute '{name}'")
+
+    # --- Original Methods (Modified to use self.data) ---
 
     def check_lengths(self):
-        """
-        Broadcast all non-None attributes to the same length.
-        """
-        # Collect all non-None attributes except 'prop'
-        not_none = {k: np.atleast_1d(v) for k, v in self._store.items() if v is not None and k != 'prop'}
+        """Broadcast all non-None attributes to the same length."""
+        # Collect all non-None attributes except in toignore
+        # Note: self.data is the dictionary store
+        not_none = {k: np.atleast_1d(v) for k, v in self.data.items() 
+                    if v is not None and k not in self.toignore}
         if not not_none:
             return
+            
         target_len = max(v.size for v in not_none.values())
         for k, v in not_none.items():
             if v.size != target_len:
-                self._store[k] = np.broadcast_to(v, target_len)
-
-    # --- dictionary-like interface ---
-    def __getitem__(self, key):
-        if key in self._store:
-            return self._store[key]
-        raise KeyError(f"Key '{key}' not found.")
-
-    def __setitem__(self, key, value):
-        self._store[key] = value
-
-    def __delitem__(self, key):
-        if isinstance(key, tuple):
-            for k in key:
-                del self._store[k]
-        else:
-            del self._store[key]
-
-    def __contains__(self, key):
-        return all(k in self._store for k in key) if isinstance(key, tuple) else key in self._store
-
-    def __iter__(self):
-        return iter(self._store)
-
-    def __len__(self):
-        return len(self._store)
-
-    # --- display ---
+                self.data[k] = np.broadcast_to(v, target_len)
+    
     def __repr__(self):
-        keys = [k for k, v in self._store.items() if v is not None and k != 'prop']
+        """Display using tabulate."""
+        keys = [k for k, v in self.data.items() if v is not None and k not in self.toignore]
         if not keys:
             return "<Empty Store>"
-        cols = np.vstack([np.atleast_1d(self._store[k]).ravel() for k in keys]).T
+            
+        # Ensure all columns are the same size before stacking
+        try:
+            cols = np.vstack([np.atleast_1d(self.data[k]).ravel() for k in keys]).T
+        except ValueError:
+            return "<Error: Property lengths do not match>"
+
         return tabulate(cols, headers=keys)
 
-    # --- utility to fill values using functions ---
     def apply_functions(self, funcs):
-        """
-        Iteratively apply dictionary of functions to fill values.
-
-        Parameters
-        ----------
-        values : dict
-            Dictionary of existing values (None if missing).
-        funcs : dict
-            Dictionary of functions keyed by the value they compute.
-        """
-        values = {key: self._store.get(key, None) for key in funcs.keys()}  # get existing values
-
+        """Iteratively apply dictionary of functions to fill values."""
+        values = {key: self.data.get(key, None) for key in funcs.keys()}
         changed = True
+        
         while changed:
             changed = False
             for key, f in funcs.items():
                 if values.get(key) is not None:
                     continue
                 args = inspect.signature(f).parameters.keys()
+                
+                # Use self.data to check if required inputs are available
                 if all(values.get(arg) is not None for arg in args):
-                    values[key] = f(*(values[arg] for arg in args))
+                    # Compute the new value
+                    computed_args = [values[arg] for arg in args]
+                    values[key] = f(*computed_args)
                     changed = True
-
-        # Reassign updated values
-        self._store.update(values)
-
-    # --- convenience ---
-    def as_dict(self):
-        return dict(self._store)
-
+        
+        # Reassign updated values (merges into self.data)
+        self.data.update(values)
+    
     # --- utilities for unique combinations ---
     def unique(self, tol=1e-4):
         """
@@ -117,11 +131,11 @@ class ComputedProperties:
         np.ndarray
             Index mapping to reconstruct original instance.
         """
-        keys = [k for k, v in self._store.items() if v is not None and k != 'prop']
+        keys = [k for k, v in self.data.items() if v is not None and not k in self.toignore]
         if not keys:
             return ComputedProperties(), np.array([], dtype=int)
 
-        cols = np.vstack([np.atleast_1d(self._store[k]).ravel() for k in keys]).T
+        cols = np.vstack([np.atleast_1d(self.data[k]).ravel() for k in keys]).T
 
         # Compute magnitude and quantize for tolerance
         mags = np.floor(np.log10(np.abs(cols)))
@@ -130,7 +144,7 @@ class ComputedProperties:
 
         # Find unique rows and index mapping
         unique_rows, idx = np.unique(quantized, axis=0, return_inverse=True)
-        unique_values = {k: unique_rows[:, i] for i, k in enumerate(keys)}
+        unique_values = {k: unique_rows[:, ii] for ii, k in enumerate(keys)}
 
         return ComputedProperties(**unique_values), idx
 
@@ -149,58 +163,31 @@ class ComputedProperties:
         ComputedProperties
             Reconstructed instance matching the original size.
         """
-        keys = [k for k, v in self._store.items() if v is not None and k != 'prop']
-        restored = {k: np.atleast_1d(self._store[k])[idx] for k in keys}
+        keys = [k for k, v in self.data.items() if v is not None and not k in self.toignore]
+        restored = {k: np.atleast_1d(self.data[k])[idx] for k in keys}
         return ComputedProperties(**restored)
-
-    # --- dynamic attribute access ---
-    def __getattr__(self, name):
-        if name in self._store:
-            return self._store[name]
-        raise AttributeError(f"'ComputedProperties' object has no attribute '{name}'")
-
-    def __setattr__(self, name, value):
-        if name == '_store':
-            super().__setattr__(name, value)
-        else:
-            self._store[name] = value
-
-
+    
 
 class MassMob(ComputedProperties):
-    def __init__(self, name=None, prop={}, **kwargs):
+    def __init__(self, name=None, prop=None, **kwargs):
         """
         Initialize a MassMob object with material properties.
 
         Parameters
         ----------
         name : str, optional
-            Name of a preset material. 
-            If provided, corresponding default properties are loaded.
-            If None, only `prop` and `kwargs` are used.
+            Name of a preset material. Default properties are loaded first.
         
         prop : dict, optional
-            Dictionary of additional properties to store in `self._store`.
-            Defaults to an empty dict.
+            Dictionary of additional properties to store. Defaults to None.
 
         **kwargs : dict
             Arbitrary keyword arguments specifying properties. These
-            override any values loaded from a preset if `name` is given.
-
-        Attributes
-        ----------
-        _store : dict
-            Stores properties passed via `prop`.
-
-        Notes
-        -----
-        - If both a preset `name` and `kwargs` are provided, the
-          `kwargs` values will override the preset defaults.
-        - This constructor ensures internal consistency by routing
-          assignments through the `store` setter.
+            override any preset values.
         """
 
-        # Presets. 
+        # --- Presets ---
+        # Define presets dictionary. Use a mutable default value (dict) only for presets.
         presets = {
             "NaCl": {"zet": 3, "rho100": 2160},
             "salt": {"zet": 3, "rho100": 2160},
@@ -210,189 +197,57 @@ class MassMob(ComputedProperties):
             "santovac": {"zet": 3, "rho100": 1198},
         }
 
-        super().__init__(**kwargs)  # use of ComputedProperties class
+        # 1. Prepare Initial Properties
+        initial_props = {}
+        if name and name in presets:
+            # Load defaults from preset
+            initial_props.update(presets[name])
+        
+        # 2. Add properties from the 'prop' dictionary (passed explicitly)
+        if prop:
+            initial_props.update(prop)
+            
+        # 3. Add properties from **kwargs (Highest precedence)
+        initial_props.update(kwargs)
 
-        self._store = presets.get(name, kwargs)
-        self._check()
+        # 4. Initialize Base Class (ComputedProperties)
+        # This calls the parent's __init__, which populates self.data.
+        super().__init__(**initial_props)
 
-        self._store.update(prop)
+        # 5. Enforce Consistency and Compute Derived Properties
+        self._solve()
 
-    # ---- enforce consistency ----
-    def _check(self):
+    # ---- Enforce Consistency ----
+    def _solve(self):
+        """
+        Defines and applies functions iteratively to fill and validate properties.
+        Uses self.apply_functions inherited from ComputedProperties.
+        """
         funcs = {
             'Dm': lambda zet: zet, 
             'zet': lambda Dm: Dm,
-            'm100': lambda rho100: rho100 * np.pi / 6 * (100e-9) ** 3,
+            # Note: 100e-9 is 100 nanometers
+            'm100': lambda rho100: rho100 * np.pi / 6 * (100e-9) ** 3, 
             'm0': lambda m100, zet: m100 * (1 / 100) ** zet,
-            'rho0': lambda m0: m0 * 6 / np.pi * 1e27,
+            'rho0': lambda m0: m0 * 6 / np.pi * 1e27,  # Conversion to rho0 (density at 1 nm, usually)
             'rho100': lambda m100: m100 * 6 / np.pi / (100e-9) ** 3,
             'k': lambda m0: m0  # alias
         }
-        self.apply_functions(funcs)  # apply functions iteratively to fill class
+        
+        # apply_functions updates self.data directly, as implemented in the parent class
+        self.apply_functions(funcs)
 
-
-    # ---- string repr (override) ----
+    # ---- String Representation (Override) ----
     def __repr__(self):
+        """Override __repr__ to use self.data (UserDict internal store)."""
         lines = ["\r\033[32mProperties:\033[0m"]
-        for attr, val in self._store.items():
-            lines.append(f"  \033[34m{attr}\033[0m → {repr(val)}")
+        
+        # Iterate over self.data, which holds all properties
+        for attr, val in self.data.items():
+            # Ensure 'toignore' is handled if it's stored in self.data for some reason
+            if attr not in self.toignore:
+                lines.append(f"  \033[34m{attr}\033[0m → {repr(val)}")
         return "\n".join(lines)
-
-
-# class MassMob:
-#     def __init__(self, name=None, prop={}, **kwargs):
-#         """
-#         Initialize a MassMob object with material properties.
-
-#         Parameters
-#         ----------
-#         name : str, optional
-#             Name of a preset material. 
-#             If provided, corresponding default properties are loaded.
-#             If None, only `prop` and `kwargs` are used.
-        
-#         prop : dict, optional
-#             Dictionary of additional properties to store in `self._store`.
-#             Defaults to an empty dict.
-
-#         **kwargs : dict
-#             Arbitrary keyword arguments specifying properties. These
-#             override any values loaded from a preset if `name` is given.
-
-#         Attributes
-#         ----------
-#         _store : dict
-#             Stores properties passed via `prop`.
-
-#         Notes
-#         -----
-#         - If both a preset `name` and `kwargs` are provided, the
-#           `kwargs` values will override the preset defaults.
-#         - This constructor ensures internal consistency by routing
-#           assignments through the `store` setter.
-#         """
-        
-#         # Presets. 
-#         presets = {
-#             "NaCl": {"zet": 3, "rho100": 2160},
-#             "salt": {"zet": 3, "rho100": 2160},
-#             "universal": {"zet": 2.48, "rho100": 510, "rhom": 1860, "dp100": 17.8, "DTEM": 0.35},
-#             "soot": {"zet": 2.48, "rho100": 510, "rhom": 1860, "dp100": 17.8, "DTEM": 0.35},
-#             "water": {"zet": 3, "rho100": 1000},
-#             "santovac": {"zet": 3, "rho100": 1198},
-#         }
-
-#         # Internal storage (always present)
-#         self._store = prop  # properties that are not MassMob related
-        
-#         # Use setter so consistency check runs
-#         self.store = presets.get(name, kwargs)
-
-#     # ---- dict-like behavior ----
-#     def __getitem__(self, key):
-#         # Accept single key or tuple of keys
-#         if isinstance(key, tuple):
-#             return tuple(self._store[k] for k in key)
-#         else:
-#             return self._store[key]
-
-#     def __setitem__(self, key, value):
-#         # Accept single key or tuple of keys
-#         if isinstance(key, tuple):
-#             if len(key) != len(value):
-#                 raise ValueError("Number of keys and values must match.")
-#             for k, v in zip(key, value):
-#                 self._store[k] = v
-#         else:
-#             self._store[key] = value
-#         self._check(key)  # always enforce consistency
-
-#     def __delitem__(self, key):
-#         if isinstance(key, tuple):
-#             for k in key:
-#                 del self._store[k]
-#         else:
-#             del self._store[key]
-
-#     def __contains__(self, key):
-#         return all(k in self._store for k in key) if isinstance(key, tuple) else key in self._store
-
-#     def __iter__(self):
-#         return iter(self._store)
-
-#     def __len__(self):
-#         return len(self._store)
-
-#     # ---- property wrapper ----
-#     @property
-#     def store(self):
-#         # return a shallow copy so callers don't mutate directly
-#         return dict(self._store)
-
-#     @store.setter
-#     def store(self, value: dict):
-#         if not isinstance(value, dict):
-#             raise TypeError("store must be a dict")
-#         # replace internal dict then enforce consistency
-#         self._store = dict(value)
-#         self._check()
-
-#     # ---- string repr ----
-#     def __repr__(self):
-#         lines = ["\r\033[32mMassMob:\033[0m"]
-#         for attr, val in self._store.items():
-#             lines.append(f"  \033[34m{attr}\033[0m → {repr(val)}")
-#         return "\n".join(lines)
-
-#     # ---- enforce consistency ----
-#     def _check(self, key=None):
-#         """Fill in missing parameters and enforce internal consistency."""
-#         p = self._store.copy()
-
-#         # Sets of keys. 
-#         sets = [["rho100", "k", "m0", "m100"], 
-#                 ['zet', 'Dm']]
-
-#         # Handle which information to keep constant.
-#         if isinstance(key, tuple):
-#             p = {key[0]: p[key[0]], key[1]: p[key[1]]}
-#         elif key in sets[0]:
-#             p = {"zet": p["zet"], key: p[key]}  # hold zeta constant
-#         elif key in sets[1]:
-#             p = {"rho100": p["rho100"], "zet": p[key]}  # hold rho100 constant
-
-#         # -- Check for zet / Dm consistency
-#         if "zet" not in p and "Dm" not in p:
-#             raise ValueError("Mass–mobility exponent (zet or Dm) required.")
-#         p["zet"] = p.get("zet", p.get("Dm"))
-#         p["Dm"] = p.get("Dm", p.get("zet"))
-
-#         # -- Ensure m0 exists (base mass parameter)
-#         if "m0" not in p:
-#             if "m100" in p:  # use 100 nm mass scaling
-#                 p["m0"] = p["m100"] * (1 / 100) ** p["zet"]
-#             elif "md" in p:  # use mass at diameter d
-#                 d = p.get("d", 100e-9)
-#                 p["m0"] = p["md"] * (1 / (d * 1e9)) ** p["zet"]
-#             elif "rho0" in p:  # use bulk density at 1 nm
-#                 p["m0"] = p["rho0"] * np.pi / 6 * 1e-27
-#             elif "rho100" in p:  # use density at 100 nm
-#                 p["m100"] = p["rho100"] * np.pi / 6 * (100e-9) ** 3
-#                 p["m0"] = p["m100"] * (1 / 100) ** p["zet"]
-#             elif "rhod" in p:  # use density at diameter d
-#                 d = p.get("d", 100e-9)
-#                 p["md"] = p["rhod"] * np.pi / 6 * d**3
-#                 p["m0"] = p["md"] * (1 / (d * 1e9)) ** p["zet"]
-#             else:
-#                 raise ValueError("Could not compute m0.")
-
-#         # -- Fill out dependent parameters
-#         p["m100"] = p["m0"] / (1 / 100) ** p["zet"]
-#         p["rho0"] = p["m0"] * 6 / np.pi * 1e27
-#         p["rho100"] = p["m100"] * 6 / np.pi / (100e-9) ** 3
-#         p["k"] = p["m0"]  # alias
-
-#         self._store = p
 
 
 #== Functions for mass-mobility relations ======================#
@@ -435,43 +290,40 @@ def massmob_init(*args):
 
 def massmob_add(prop, f1, v1=None, f2=None, v2=None):
     """
-    Add or update mass-mobility parameters in an existing prop dictionary.
-
-    This function can add mass-mobility information to a dictionary containing 
-    flow rates, temperature, pressure, and other parameters for evaluating 
-    the transfer functions of classifiers.
+    Add or update mass-mobility parameters in an existing prop structure.
 
     Parameters:
-    prop (dict): The prop structure (dictionary) to update.
-    f1 (str): Name of particle type or field to add/update.
-    v1 (any): Value corresponding to the field f1. If f1 is a string of particle type, this can be None.
+    prop (dict or MassMob): The properties structure to update.
+    f1 (str): Name of particle type OR field to add/update.
+    v1 (any): Value corresponding to f1. If f1 is a particle type, this can be None.
     f2 (str): Second field to add/update (if using name-value pairs).
-    v2 (any): Value corresponding to the field f2.
+    v2 (any): Value corresponding to f2.
 
     Returns:
-    dict: Updated prop dictionary with mass-mobility parameters.
+    MassMob: New MassMob instance with combined properties.
     """
-
-    if isinstance(prop, MassMob):
-        prop = prop._store  # convert to dictionary instead
-
-    # Remove the relevant fields to be replaced
-    fields = ['zet', 'Dm', 'm0', 'k', 'rho0', 'm100', 'rho100']
-    for field in fields:
-        if field in prop:
-            del prop[field]
-
-    if v1 is None:  # If second argument is string of particle type
-        inputs = {'name': f1}
-
-    else:  # If name-value pairs are provided
-        # Add new values
-        inputs = {f1: v1, f2: v2}
-
-    output = MassMob(**inputs)
-    output._store = {**output._store, **prop}
     
-    return output
+    # 1. Extract existing properties from prop
+    if isinstance(prop, MassMob):
+        # Access the underlying dictionary from the MassMob instance
+        existing_props = prop.data.copy()
+    else:
+        # If it's a regular dict, copy it
+        existing_props = prop.copy()
+
+    # 2. Determine new mass-mobility inputs
+    if v1 is None:  # Case 1: f1 is a preset name (e.g., 'NaCl')
+        inputs = {'name': f1}
+    else:  # Case 2: f1, v1, f2, v2 are name-value pairs
+        inputs = {f1: v1}
+        if f2 is not None:
+             inputs[f2] = v2
+
+    prop = MassMob(**inputs)  # create a temporary MassMob instance with only the new inputs.
+    prop.data.update(existing_props)  # merge existing properties into the new MassMob instance
+    prop._solve() # re-check consistency to ensure any new combined values are calculated
+    
+    return prop
 
 
 def massmob_update(prop, f, v, fc=None):
@@ -525,7 +377,7 @@ def fzero(fun, x0, n=3):
 
 
 #== Slip correction ============================================#
-def cc(d, T_opt=None, p=None, opt=None):
+def cc(d, T=None, p=None, opt=None):
     """
     Compute the Cunningham slip correction factor for the provided mobility diameter, d, in nm.
     
@@ -540,13 +392,10 @@ def cc(d, T_opt=None, p=None, opt=None):
     """
 
     # Handle optional arguments and defaults
-    if T_opt is None:
-        T_opt = None
-    
-    if isinstance(T_opt, str):
-        opt = T_opt
-    elif T_opt is not None:
-        T = T_opt
+    if isinstance(T, str):
+        opt = T
+    elif T is not None:
+        T = T
 
     if opt is None:
         if p is None:

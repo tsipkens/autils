@@ -86,8 +86,13 @@ def update_flow(prop, Q):
     """
     prop['Q'] = Q
 
-    if 'v_bar' in prop.keys():
-        prop['v_bar'] = prop['Q'] / prop['A']
+    if prop is dict:
+        if 'v_bar' in prop.keys():
+            prop['v_bar'] = prop['Q'] / prop['A']
+    else:
+        if hasattr(prop, 'v_bar'):
+            prop['v_bar'] = prop['Q'] / prop['A']
+
 
     return prop
     
