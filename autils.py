@@ -84,7 +84,7 @@ class ComputedProperties(UserDict):
         if not keys:
             return "<Empty Store>"
         
-        if len(self.data[keys[0]]) == 1:
+        if len(np.atleast_1d(self.data[keys[0]])) == 1:
             """Override __repr__ to use self.data (UserDict internal store)."""
             lines = ["\r\033[32mProperties:\033[0m"]
             
