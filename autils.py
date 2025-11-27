@@ -83,14 +83,25 @@ class ComputedProperties(UserDict):
         keys = [k for k, v in self.data.items() if v is not None and k not in self.toignore]
         if not keys:
             return "<Empty Store>"
+        
+        if len(self.data[keys[0]]) == 1:
+            """Override __repr__ to use self.data (UserDict internal store)."""
+            lines = ["\r\033[32mProperties:\033[0m"]
             
-        # Ensure all columns are the same size before stacking
-        try:
-            cols = np.vstack([np.atleast_1d(self.data[k]).ravel() for k in keys]).T
-        except ValueError:
-            return "<Error: Property lengths do not match>"
+            # Iterate over self.data, which holds all properties
+            for attr, val in self.data.items():
+                # Ensure 'toignore' is handled if it's stored in self.data for some reason
+                if attr not in self.toignore:
+                    lines.append(f"  \033[34m{attr}\033[0m → {repr(val)}")
+            return "\n".join(lines)
 
-        return tabulate(cols, headers=keys)
+        else:  # ensure all columns are the same size before stacking to form table
+            try:
+                cols = np.vstack([np.atleast_1d(self.data[k]).ravel() for k in keys]).T
+            except ValueError:
+                return "<Error: Property lengths do not match>"
+
+            return tabulate(cols, headers=keys)
 
     def apply_functions(self, funcs):
         """Iteratively apply dictionary of functions to fill values."""
@@ -237,18 +248,6 @@ class MassMob(ComputedProperties):
         # apply_functions updates self.data directly, as implemented in the parent class
         self.apply_functions(funcs)
 
-    # ---- String Representation (Override) ----
-    def __repr__(self):
-        """Override __repr__ to use self.data (UserDict internal store)."""
-        lines = ["\r\033[32mProperties:\033[0m"]
-        
-        # Iterate over self.data, which holds all properties
-        for attr, val in self.data.items():
-            # Ensure 'toignore' is handled if it's stored in self.data for some reason
-            if attr not in self.toignore:
-                lines.append(f"  \033[34m{attr}\033[0m → {repr(val)}")
-        return "\n".join(lines)
-
 
 #== Functions for mass-mobility relations ======================#
 def massmob_init(*args):
@@ -318,11 +317,10 @@ def massmob_add(prop, f1, v1=None, f2=None, v2=None):
         inputs = {f1: v1}
         if f2 is not None:
              inputs[f2] = v2
-
-    prop = MassMob(**inputs)  # create a temporary MassMob instance with only the new inputs.
-    prop.data.update(existing_props)  # merge existing properties into the new MassMob instance
-    prop._solve() # re-check consistency to ensure any new combined values are calculated
     
+    prop = {**existing_props, **MassMob(**inputs)}  # merge properties
+    prop = ComputedProperties(**prop)  # convert back to ComputedProperties
+
     return prop
 
 
