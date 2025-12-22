@@ -571,6 +571,29 @@ def rhoeff(d, m):
     """
     return 6 * m / (np.pi * d**3)
 
+def dm_mp2rhoeff(d, m):
+    """
+    Alternate name of rhoeff consistent with other definitions.
+    """
+    return rhoeff(d, m)
+
+
+def dm_rhoeff2mp(d, rho):
+    """
+    Computes the effective density from mass and mobility diameter.
+    
+    Parameters:
+        d: float or array-like
+            Mobility diameter in meters.
+        rho: float or array-like
+            Effective density in kg//m^3.
+    
+    Returns:
+        mp: float or array-like
+            Single particle mass in kg.
+    """
+    return rho * np.pi * d**3 / 6
+
 
 #== Mobility diameter conversions ==============================#
 def dm2chi(dm, prop, n=3, *args):
@@ -1041,19 +1064,22 @@ def sdm2sda(sd, d, prop, n=3):
     Returns:
     float or ndarray: GSD for the aerodynamic distribution.
     """
-    d1 = np.exp(np.log(d) * 1.01)
-    d2 = np.exp(np.log(d) * 0.99)
+    return np.exp(np.log(ddm_dda(d, prop, n=3)) * np.log(sd))
+
+
+def ddm_dda(d, prop, n=3):
+    """
+    Calculate the derivative of dm with respect to da. 
+    """
+    d1 = np.exp(np.log(d) + 0.01)
+    d2 = np.exp(np.log(d) - 0.01)
 
     da1 = dm2da(d1, prop, n)
     da2 = dm2da(d2, prop, n)
 
-    sa = np.exp(
-        (np.log(da1) - np.log(da2)) /
-        (0.02 * np.log(d)) * np.log(sd)
+    return np.exp(
+        (np.log(da1) - np.log(da2)) / 0.02
     )
-
-    return sa
-
 
 def sdm2smp(sd, prop):
     """
