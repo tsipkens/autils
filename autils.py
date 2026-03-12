@@ -771,35 +771,35 @@ def npp2dm(npp, prop):
     return 100e-9 * (npp / N100) ** (1 / (3 * (1 - prop['DTEM'])))
 
 
-def dm_da2mp(dm, da, *varargs):
+def dm_da2mp(dm, da, *args):
     """
     Compute mass from mobility and aerodynamic diameters.
 
     Parameters:
     dm (float or ndarray): Mobility diameter in meters.
     da (float or ndarray): Aerodynamic diameter in meters.
-    *varargs: Optional arguments for Cunningham slip correction calculation.
+    *args: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
     mp (float or ndarray): Particle mass in kg.
     """
-    return da**2 * dm * (np.pi * 1e3 / 6 * cc(da, *varargs) / cc(dm, *varargs))
+    return da**2 * dm * (np.pi * 1e3 / 6 * cc(da, *args) / cc(dm, *args))
 
 
-def dm_da2rhoeff(dm, da, *varargs):
+def dm_da2rhoeff(dm, da, *args):
     """
     Compute effective density from mobility and aerodynamic diameters.
 
     Parameters:
     dm (float or ndarray): Mobility diameter in meters.
     da (float or ndarray): Aerodynamic diameter in meters.
-    *varargs: Optional arguments for Cunningham slip correction calculation.
+    *args: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
     rho (float or ndarray): Effective density in kg/m^3.
     """
     # Compute effective density
-    return 1000 * (da / dm)**2 * cc(da, *varargs) / cc(dm, *varargs)
+    return 1000 * (da / dm)**2 * cc(da, *args) / cc(dm, *args)
 
 
 def dm_rhoeff2da(dm, rho, n=3, *args):
@@ -836,7 +836,7 @@ def dm_rhoeff2da(dm, rho, n=3, *args):
     return da
 
 
-def dm_mp2da(dm, mp, n=3, *varargs):
+def dm_mp2da(dm, mp, n=3, *args):
     """
     Compute aerodynamic diameter from mobility diameter and mass.
 
@@ -844,7 +844,7 @@ def dm_mp2da(dm, mp, n=3, *varargs):
     dm (float or ndarray): Mobility diameter in meters.
     mp (float or ndarray): Particle mass in kilograms.
     n (int, optional): Number of iterations (also see fzero).
-    *varargs: Optional arguments for Cunningham slip correction calculation.
+    *args: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
     da (float or ndarray): Aerodynamic diameter in meters.
@@ -856,7 +856,7 @@ def dm_mp2da(dm, mp, n=3, *varargs):
     if n > 0:
         # Define the function to solve
         def fun(da1):
-            return 1e9 * (da * np.sqrt(cc(dm, *varargs) / cc(da1, *varargs)) - da1)
+            return 1e9 * (da * np.sqrt(cc(dm, *args) / cc(da1, *args)) - da1)
 
         # Solve for aerodynamic diameter
         da = fzero(fun, da, n)
@@ -894,7 +894,7 @@ def dve2chi(dve, prop, n=3):
     return chi
 
 
-def dve2da(dve, prop, n=3, *varargs):
+def dve2da(dve, prop, n=3, *args):
     """
     Convert volume-equivalent diameter to aerodynamic diameter.
 
@@ -902,7 +902,7 @@ def dve2da(dve, prop, n=3, *varargs):
     dve (float or ndarray): Volume-equivalent diameter in meters.
     prop (dict): Dictionary containing properties including 'rhom'.
     n (int, optional): Number of iterations (also see fzero).
-    *varargs: Optional arguments for Cunningham slip correction calculation.
+    *args: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
     da (float or ndarray): Aerodynamic diameter in meters.
@@ -917,7 +917,7 @@ def dve2da(dve, prop, n=3, *varargs):
         # Define the function to solve
         def fun(da1):
             return 1e9 * (dve * np.sqrt(prop['rhom'] / rho0 / chi * 
-                                         cc(dve, *varargs) / cc(da1, *varargs)) - da1)
+                                         cc(dve, *args) / cc(da1, *args)) - da1)
 
         # Solve for aerodynamic diameter
         da = fzero(fun, da, n)
@@ -965,7 +965,7 @@ def mp2dm(mp, prop):
     return 1e-9 * (mp / prop['m0']) ** (1 / prop['zet'])
 
 
-def mp_da2dm(mp, da, n=3, *varargs):
+def mp_da2dm(mp, da, n=3, *args):
     """
     Compute mobility diameter from particle mass and aerodynamic diameter.
 
@@ -973,7 +973,7 @@ def mp_da2dm(mp, da, n=3, *varargs):
     mp (float or ndarray): Particle mass in kilograms.
     da (float or ndarray): Aerodynamic diameter in meters.
     n (int, optional): Number of iterations (also see fzero).
-    *varargs: Optional arguments for Cunningham slip correction calculation.
+    *args: Optional arguments for Cunningham slip correction calculation.
 
     Returns:
     dm (float or ndarray): Mobility diameter in meters.
@@ -984,12 +984,29 @@ def mp_da2dm(mp, da, n=3, *varargs):
     if n > 0:
         # Define the function to solve
         def fun(dm1):
-            return 1e9 * (dm * (cc(dm1, *varargs) / cc(da, *varargs)) - dm1)
+            return 1e9 * (dm * (cc(dm1, *args) / cc(da, *args)) - dm1)
 
         # Solve for mobility diameter
         dm = fzero(fun, dm, n)
 
     return dm
+
+
+def mp_da2rhoeff(mp, da, *args, **kwargs):
+    """
+    Compute mobility diameter from particle mass and aerodynamic diameter.
+
+    Parameters:
+    mp (float or ndarray): Particle mass in kilograms.
+    da (float or ndarray): Aerodynamic diameter in meters.
+    n (int, optional): Number of iterations (also see fzero).
+    *args: Optional arguments for Cunningham slip correction calculation.
+
+    Returns:
+    rho (float or ndarray): Effective density in kg/m3.
+    """
+    dm = mp_da2dm(mp, da, *args, **kwargs)  # compute mobility diameter
+    return rhoeff(dm, mp)  # then compute eff. dens. using basic definition
 
 
 def mp2zp(mp, prop, z=1, T=None, p=None):
