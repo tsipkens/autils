@@ -18,7 +18,7 @@ GRAY = "\033[30m"  # alt. 90m
 RESET = "\033[0m"
 
 class tqdm2(tqdm):
-    def format_meter(self, n, total, elapsed, **kwargs):
+    def format_meter(self, n, total, elapsed, colour=None, **kwargs):
         if total:
             frac = n / total
             bar_length = 25
@@ -26,7 +26,7 @@ class tqdm2(tqdm):
             filled_len = int(bar_length * frac)
             empty_len = bar_length - filled_len
 
-            if frac >= 1:
+            if frac >= 1 or colour == 'green':
                 bar = (
                     GREEN + "█" * filled_len + RESET +
                     GRAY + "█" * empty_len + RESET
