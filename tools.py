@@ -14,6 +14,7 @@ from tqdm import tqdm
 # ANSI color codes
 GREEN = "\033[92m"
 BLUE = "\033[96m"
+YELLOW = "\033[93m"
 GRAY = "\033[30m"  # alt. 90m
 RESET = "\033[0m"
 
@@ -29,6 +30,11 @@ class tqdm2(tqdm):
             if frac >= 1 or colour == 'green':
                 bar = (
                     GREEN + "█" * filled_len + RESET +
+                    GRAY + "█" * empty_len + RESET
+                )
+            elif colour == 'yellow':
+                bar = (
+                    YELLOW + "█" * filled_len + RESET +
                     GRAY + "█" * empty_len + RESET
                 )
             else:
